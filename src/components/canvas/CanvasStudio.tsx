@@ -174,11 +174,15 @@ export function CanvasStudio() {
   const insufficient =
     availableBalance !== undefined && cost !== undefined && cost > availableBalance;
   const wrongNetwork = !mockMode && Boolean(address) && chainId !== CHAIN_ID;
+  const pricingReady = mockMode || (price !== undefined && decimals !== undefined);
+  const balanceReady = mockMode || availableBalance !== undefined;
 
   const canPaint =
     draftCount > 0 &&
     !paintState.busy &&
     !insufficient &&
+    pricingReady &&
+    balanceReady &&
     (mockMode || (Boolean(address) && configured));
 
   useEffect(() => {
@@ -503,9 +507,13 @@ export function CanvasStudio() {
             title={
               insufficient
                 ? "Deposit more IMD into the vault"
-                : !mockMode && !address
-                  ? "Connect a wallet first"
-                  : "Send paint transaction"
+                : !pricingReady
+                  ? "Loading the on-chain price and token decimals"
+                  : !balanceReady
+                    ? "Loading your vault balance"
+                    : !mockMode && !address
+                      ? "Connect a wallet first"
+                      : "Send paint transaction"
             }
           >
             {paintState.busy ? "Painting…" : `Paint ${draftCount || ""}`.trim()}

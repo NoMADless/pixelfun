@@ -92,10 +92,11 @@ export function useCanvasData() {
           source = mockMode ? "mock" : "api";
         } catch (apiError) {
           if (!configured) throw apiError;
-          // Fall back to direct RPC reads from the browser.
+          // Fall back to direct RPC reads from the browser. Capture the block
+          // before reading so paints during the read are replayed, not skipped.
           const client = getReadClient();
-          bytes = await readCanvasFromRpc({ client, concurrency: 4, retries: 2 });
           blockNumber = await getLatestBlockNumber(client);
+          bytes = await readCanvasFromRpc({ client, concurrency: 4, retries: 2 });
           source = "rpc";
         }
 

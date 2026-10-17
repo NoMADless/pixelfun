@@ -95,6 +95,7 @@ Everything contract-related lives in `src/lib/contract.ts`:
 - ABIs: `abi/PixelFunVault.json`, `abi/ERC20.json` (placeholder ERC20 set)
 - addresses and chain from `src/config/chains.ts`
 - chunked `getPixels` reader, log reader, token helpers
+- wagmi read configs for decimals, balances, allowance, `PRICE` and `MAX_BATCH`
 - write request builders (`paintCall`, `depositCall`, `withdrawCall`, `approveCall`)
 
 When the swarm ships the final ABI, replace `abi/PixelFunVault.json` and adjust only
@@ -119,6 +120,8 @@ mock deposit/faucet, undo, zoom, and the not-deployed state.
 1. Push the repository and import it into Vercel.
 2. Add the env vars from `.env.example` (Project → Settings → Environment Variables).
    `NEXT_PUBLIC_*` vars are inlined at build time; redeploy after changing them.
+   `MOCK_MODE` is read when the page is built and by the API at request time, so set
+   it before the build and keep it consistent across build and runtime.
 3. Deploy. No database, cron, or serverless storage is required.
 4. The canvas route runs as a Node serverless function. RPC env values are public
    endpoints; there are no secrets in this stage.

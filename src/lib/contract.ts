@@ -3,6 +3,7 @@ import {
   http,
   parseAbiItem,
   type Abi,
+  type Address,
   type Hex,
   type PublicClient,
 } from "viem";
@@ -164,6 +165,69 @@ export async function readTokenDecimals(client = getReadClient()): Promise<numbe
     functionName: "decimals",
   });
   return Number(decimals);
+}
+
+/* ---------------------------- read config builders ---------------------------- */
+
+/**
+ * Configs for wagmi's useReadContract. Keeping the ABI, address and function
+ * names here means a final-ABI rename only touches this adapter.
+ */
+export function readTokenDecimalsConfig() {
+  return {
+    address: IMD_ADDRESS ?? undefined,
+    abi: ERC20_ABI,
+    functionName: "decimals" as const,
+    chainId: robinhoodChain.id,
+  };
+}
+
+export function readTokenBalanceConfig(owner?: Address) {
+  return {
+    address: IMD_ADDRESS ?? undefined,
+    abi: ERC20_ABI,
+    functionName: "balanceOf" as const,
+    args: owner ? ([owner] as const) : undefined,
+    chainId: robinhoodChain.id,
+  };
+}
+
+export function readVaultBalanceConfig(owner?: Address) {
+  return {
+    address: VAULT_ADDRESS ?? undefined,
+    abi: VAULT_ABI,
+    functionName: "balanceOf" as const,
+    args: owner ? ([owner] as const) : undefined,
+    chainId: robinhoodChain.id,
+  };
+}
+
+export function readAllowanceConfig(owner?: Address) {
+  return {
+    address: IMD_ADDRESS ?? undefined,
+    abi: ERC20_ABI,
+    functionName: "allowance" as const,
+    args: owner && VAULT_ADDRESS ? ([owner, VAULT_ADDRESS] as const) : undefined,
+    chainId: robinhoodChain.id,
+  };
+}
+
+export function readPriceConfig() {
+  return {
+    address: VAULT_ADDRESS ?? undefined,
+    abi: VAULT_ABI,
+    functionName: "PRICE" as const,
+    chainId: robinhoodChain.id,
+  };
+}
+
+export function readMaxBatchConfig() {
+  return {
+    address: VAULT_ADDRESS ?? undefined,
+    abi: VAULT_ABI,
+    functionName: "MAX_BATCH" as const,
+    chainId: robinhoodChain.id,
+  };
 }
 
 /* ---------------------------- write call builders ---------------------------- */

@@ -60,10 +60,12 @@ testable app. Stages 2 and 3 are not implemented yet.
 - Default chunk size is 512 slots (=16,384 pixels, 16 calls for the whole canvas),
   concurrency 4, 2 retries. `CANVAS_CHUNK_SLOTS` controls the server route;
   `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` controls the browser's direct RPC fallback.
-- The initial full read establishes the last processed block. Live polling starts
-  from the following block every 4s. A full resync runs every 60s and on tab
-  visibility/focus. A reorg inside the polling gap is corrected by the next full
-  resync.
+- The initial full read captures the block number **before** reading `getPixels`,
+  so a paint that lands during the read is replayed from `Painted` logs instead of
+  being skipped. Replaying an already-applied paint is idempotent.
+- Live polling starts from that block + 1 every 4s. A full resync runs every 60s
+  and on tab visibility/focus. A reorg inside the polling gap is corrected by the
+  next full resync.
 - `/api/canvas` caches for 3s at the CDN (`stale-while-revalidate=30`). This means a
   paint can take a few seconds to appear for other visitors; the painter gets an
   immediate local update after confirmation.
@@ -84,6 +86,10 @@ testable app. Stages 2 and 3 are not implemented yet.
   starts on the second pointer. Acceptable for Stage 1.
 - Gas is not estimated client-side; wallet errors and failed/reverted transactions
   are surfaced in the toast/step UI with explorer links.
+- The Paint button stays disabled until `PRICE`, token decimals and the vault
+  balance have loaded, so a transaction cannot be sent with an unknown cost.
+- Chain switching is lazy: deposit, withdraw and paint switch to Robinhood Chain
+  before the transaction. Connecting a wallet never switches network silently.
 
 ## Deployment
 

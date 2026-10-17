@@ -47,13 +47,15 @@ export async function GET() {
 
   try {
     const client = getReadClient();
+    // Capture the block first: anything painted while the chunks are read is
+    // then replayed from Painted logs instead of falling into a gap.
+    const blockNumber = await getLatestBlockNumber(client);
     const bytes = await readCanvasFromRpc({
       client,
       chunkSlots: serverCanvasChunkSlots(),
       concurrency: 4,
       retries: 2,
     });
-    const blockNumber = await getLatestBlockNumber(client);
     return Response.json(
       {
         width: CANVAS_WIDTH,

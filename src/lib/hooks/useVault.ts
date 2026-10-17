@@ -10,18 +10,17 @@ import {
   useWriteContract,
 } from "wagmi";
 import type { Hash } from "viem";
+import { CHAIN_ID, CONTRACTS_CONFIGURED } from "@/config/chains";
 import {
-  CHAIN_ID,
-  CONTRACTS_CONFIGURED,
-  IMD_ADDRESS,
-  VAULT_ADDRESS,
-} from "@/config/chains";
-import {
-  ERC20_ABI,
-  VAULT_ABI,
   approveCall,
   depositCall,
   readAllowance,
+  readAllowanceConfig,
+  readMaxBatchConfig,
+  readPriceConfig,
+  readTokenBalanceConfig,
+  readTokenDecimalsConfig,
+  readVaultBalanceConfig,
   withdrawCall,
 } from "@/lib/contract";
 import { getErrorMessage } from "@/lib/format";
@@ -51,53 +50,32 @@ export function useVault(mockMode: boolean) {
   const enabled = !mockMode && CONTRACTS_CONFIGURED;
 
   const decimalsQuery = useReadContract({
-    address: IMD_ADDRESS ?? undefined,
-    abi: ERC20_ABI,
-    functionName: "decimals",
-    chainId: CHAIN_ID,
+    ...readTokenDecimalsConfig(),
     query: { enabled },
   });
 
   const walletBalanceQuery = useReadContract({
-    address: IMD_ADDRESS ?? undefined,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: CHAIN_ID,
+    ...readTokenBalanceConfig(address),
     query: { enabled: enabled && Boolean(address) },
   });
 
   const vaultBalanceQuery = useReadContract({
-    address: VAULT_ADDRESS ?? undefined,
-    abi: VAULT_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: CHAIN_ID,
+    ...readVaultBalanceConfig(address),
     query: { enabled: enabled && Boolean(address) },
   });
 
   const allowanceQuery = useReadContract({
-    address: IMD_ADDRESS ?? undefined,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: address && VAULT_ADDRESS ? [address, VAULT_ADDRESS] : undefined,
-    chainId: CHAIN_ID,
-    query: { enabled: enabled && Boolean(address) && Boolean(VAULT_ADDRESS) },
+    ...readAllowanceConfig(address),
+    query: { enabled: enabled && Boolean(address) },
   });
 
   const priceQuery = useReadContract({
-    address: VAULT_ADDRESS ?? undefined,
-    abi: VAULT_ABI,
-    functionName: "PRICE",
-    chainId: CHAIN_ID,
+    ...readPriceConfig(),
     query: { enabled },
   });
 
   const maxBatchQuery = useReadContract({
-    address: VAULT_ADDRESS ?? undefined,
-    abi: VAULT_ABI,
-    functionName: "MAX_BATCH",
-    chainId: CHAIN_ID,
+    ...readMaxBatchConfig(),
     query: { enabled },
   });
 
@@ -129,7 +107,7 @@ export function useVault(mockMode: boolean) {
 
   const deposit = useCallback(
     async (amount: bigint): Promise<Hash[]> => {
-      if (!enabled || !VAULT_ADDRESS) throw new Error("Vault is not deployed.");
+      if (!enabled) throw new Error("Vault is not deployed.");
       if (!address) throw new Error("Connect a wallet first.");
       if (!publicClient) throw new Error("No RPC client for Robinhood Chain.");
       if (amount <= 0n) throw new Error("Enter an amount above zero.");
@@ -181,7 +159,7 @@ export function useVault(mockMode: boolean) {
 
   const withdraw = useCallback(
     async (amount: bigint): Promise<Hash[]> => {
-      if (!enabled || !VAULT_ADDRESS) throw new Error("Vault is not deployed.");
+      if (!enabled) throw new Error("Vault is not deployed.");
       if (!address) throw new Error("Connect a wallet first.");
       if (amount <= 0n) throw new Error("Enter an amount above zero.");
 
