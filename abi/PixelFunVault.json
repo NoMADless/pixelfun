@@ -1,0 +1,215 @@
+[
+  {
+    "type": "function",
+    "name": "imd",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "PRICE",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "WIDTH",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint16" }]
+  },
+  {
+    "type": "function",
+    "name": "HEIGHT",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint16" }]
+  },
+  {
+    "type": "function",
+    "name": "PALETTE_SIZE",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8" }]
+  },
+  {
+    "type": "function",
+    "name": "MAX_BATCH",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint16" }]
+  },
+  {
+    "type": "function",
+    "name": "BOARD_SIZE",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint16" }]
+  },
+  {
+    "type": "function",
+    "name": "MIN_PIXELS",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "EPOCH_LENGTH",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint64" }]
+  },
+  {
+    "type": "function",
+    "name": "EPOCH_START",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint64" }]
+  },
+  {
+    "type": "function",
+    "name": "totalPixelsPainted",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "balanceOf",
+    "stateMutability": "view",
+    "inputs": [{ "name": "user", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "currentEpoch",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint64" }]
+  },
+  {
+    "type": "function",
+    "name": "epochStart",
+    "stateMutability": "view",
+    "inputs": [{ "name": "epoch", "type": "uint64" }],
+    "outputs": [{ "name": "", "type": "uint64" }]
+  },
+  {
+    "type": "function",
+    "name": "epochEnd",
+    "stateMutability": "view",
+    "inputs": [{ "name": "epoch", "type": "uint64" }],
+    "outputs": [{ "name": "", "type": "uint64" }]
+  },
+  {
+    "type": "function",
+    "name": "epochEnded",
+    "stateMutability": "view",
+    "inputs": [{ "name": "epoch", "type": "uint64" }],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "pixelsPaintedIn",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "epoch", "type": "uint64" },
+      { "name": "painter", "type": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getBoard",
+    "stateMutability": "view",
+    "inputs": [{ "name": "epoch", "type": "uint64" }],
+    "outputs": [
+      { "name": "painters", "type": "address[]" },
+      { "name": "counts", "type": "uint32[]" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "isWhitelisted",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "epoch", "type": "uint64" },
+      { "name": "painter", "type": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "pixelAt",
+    "stateMutability": "view",
+    "inputs": [{ "name": "id", "type": "uint32" }],
+    "outputs": [{ "name": "", "type": "uint8" }]
+  },
+  {
+    "type": "function",
+    "name": "getPixels",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "startSlot", "type": "uint32" },
+      { "name": "slotCount", "type": "uint32" }
+    ],
+    "outputs": [{ "name": "", "type": "bytes" }]
+  },
+  {
+    "type": "function",
+    "name": "deposit",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "amount", "type": "uint256" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "withdraw",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "amount", "type": "uint256" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "paint",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "ids", "type": "uint32[]" },
+      { "name": "colors", "type": "uint8[]" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "event",
+    "name": "Deposited",
+    "anonymous": false,
+    "inputs": [
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Withdrawn",
+    "anonymous": false,
+    "inputs": [
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Painted",
+    "anonymous": false,
+    "inputs": [
+      { "name": "painter", "type": "address", "indexed": true },
+      { "name": "epoch", "type": "uint64", "indexed": true },
+      { "name": "ids", "type": "uint32[]", "indexed": false },
+      { "name": "colors", "type": "uint8[]", "indexed": false },
+      { "name": "burned", "type": "uint256", "indexed": false }
+    ]
+  }
+]

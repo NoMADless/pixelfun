@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --pf-bg: #f3eddf;
+  --pf-panel: #fffaf0;
+  --pf-panel-2: #ece4d2;
+  --pf-ink: #181425;
+  --pf-muted: #5a6988;
+  --pf-line: #cfc5ae;
+  --pf-accent: #e43b44;
+  --pf-accent-ink: #fff7e8;
+  --pf-green: #3e8948;
+  --pf-board: #262b44;
+  --pf-glow: #fee761;
+}
+
+.dark {
+  --pf-bg: #13111c;
+  --pf-panel: #1b1826;
+  --pf-panel-2: #242133;
+  --pf-ink: #f4efe3;
+  --pf-muted: #8b9bb4;
+  --pf-line: #3a4466;
+  --pf-accent: #f77622;
+  --pf-accent-ink: #181425;
+  --pf-green: #63c74d;
+  --pf-board: #0b0a10;
+  --pf-glow: #2ce8f5;
+}
+
+@theme inline {
+  --color-bg: var(--pf-bg);
+  --color-panel: var(--pf-panel);
+  --color-panel2: var(--pf-panel-2);
+  --color-ink: var(--pf-ink);
+  --color-muted: var(--pf-muted);
+  --color-line: var(--pf-line);
+  --color-accent: var(--pf-accent);
+  --color-accentink: var(--pf-accent-ink);
+  --color-pfgreen: var(--pf-green);
+  --color-board: var(--pf-board);
+  --color-glow: var(--pf-glow);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-pixel: var(--font-press-start), var(--font-geist-mono), monospace;
+}
+
+* {
+  border-color: var(--pf-line);
+}
+
+html {
+  background: var(--pf-bg);
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--pf-line) 45%, transparent) 1px, transparent 0)
+      0 0 / 22px 22px,
+    var(--pf-bg);
+  color: var(--pf-ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--pf-accent);
+  color: var(--pf-accent-ink);
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.pixel-font {
+  font-family: var(--font-press-start), monospace;
+  letter-spacing: 0.02em;
+}
+
+.pixel-panel {
+  background: var(--pf-panel);
+  border: 2px solid var(--pf-line);
+}
+
+.pixel-panel-strong {
+  background: var(--pf-panel);
+  border: 2px solid var(--pf-ink);
+  box-shadow: 4px 4px 0 0 var(--pf-ink);
+}
+
+.dark .pixel-panel-strong {
+  box-shadow: 4px 4px 0 0 #000;
+}
+
+.pixel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 2px solid var(--pf-ink);
+  background: var(--pf-panel);
+  color: var(--pf-ink);
+  font-weight: 700;
+  box-shadow: 2px 2px 0 0 var(--pf-ink);
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+}
+
+.dark .pixel-btn {
+  box-shadow: 2px 2px 0 0 #000;
+}
+
+.pixel-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--pf-ink);
+}
+
+.dark .pixel-btn:hover:not(:disabled) {
+  box-shadow: 3px 3px 0 0 #000;
+}
+
+.pixel-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 0 var(--pf-ink);
+}
+
+.pixel-btn:disabled {
+  opacity: 0.45;
+}
+
+.pixel-btn-primary {
+  background: var(--pf-accent);
+  color: var(--pf-accent-ink);
+}
+
+.pixel-btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pf-input {
+  border: 2px solid var(--pf-line);
+  background: var(--pf-bg);
+  color: var(--pf-ink);
+  outline: none;
+}
+
+.pf-input:focus {
+  border-color: var(--pf-ink);
+}
+
+.pf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pf-line) transparent;
+}
+
+canvas.pixel-canvas {
+  image-rendering: pixelated;
+  touch-action: none;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes pf-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.pf-blink {
+  animation: pf-blink 1.4s steps(2, end) infinite;
+}
+
+@keyframes pf-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pf-rise {
+  animation: pf-rise 160ms ease-out both;
+}
