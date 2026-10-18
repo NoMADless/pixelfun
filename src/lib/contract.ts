@@ -207,6 +207,14 @@ export async function readTotalPixelsPainted(client = getReadClient()): Promise<
   })) as bigint;
 }
 
+export async function readImdAddress(client = getReadClient()): Promise<Address> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "imd",
+  })) as Address;
+}
+
 export async function readPrice(client = getReadClient()): Promise<bigint> {
   return (await client.readContract({
     address: requireVault(),
