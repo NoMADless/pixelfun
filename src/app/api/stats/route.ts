@@ -10,8 +10,9 @@ import {
   readEpochLength,
   readEpochStart,
   readMinPixels,
-  readPrice,
+  readPriceWithFallback,
   readTokenDecimals,
+  readTotalBurned,
   readTotalPixelsPainted,
 } from "@/lib/contract";
 import { getMockStats } from "@/server/mock-leaderboard";
@@ -40,10 +41,10 @@ export async function GET() {
 
   try {
     const client = getReadClient();
-    const [totalPixelsPainted, price, decimals, currentEpoch, minPixels, boardSize, epochLength] =
+    const [totalPixelsPainted, priceRead, decimals, currentEpoch, minPixels, boardSize, epochLength] =
       await Promise.all([
         readTotalPixelsPainted(client),
-        readPrice(client),
+        readPriceWithFallback(client),
         readTokenDecimals(client),
         readCurrentEpoch(client),
         readMinPixels(client),
@@ -56,12 +57,25 @@ export async function GET() {
       readEpochEnded(currentEpoch, client),
     ]);
 
+    // totalBurned() is the contract's own counter. Keep the old
+    // totalPixelsPainted × PRICE math as a fallback for RPC builds without it.
+    let totalBurned: bigint | null = null;
+    try {
+      totalBurned = await readTotalBurned(client);
+    } catch {
+      totalBurned = null;
+    }
+    const price = priceRead.price ?? 0n;
+    const burned = totalBurned ?? totalPixelsPainted * price;
+
     return Response.json(
       {
         mock: false,
         totalPixelsPainted: totalPixelsPainted.toString(),
         price: price.toString(),
-        burned: (totalPixelsPainted * price).toString(),
+        priceSource: priceRead.source,
+        burned: burned.toString(),
+        burnedSource: totalBurned === null ? "painted-times-price" : "totalBurned",
         decimals,
         currentEpoch: currentEpoch.toString(),
         epochStart: epochStart.toString(),

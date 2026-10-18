@@ -24,6 +24,7 @@ import {
   withdrawCall,
 } from "@/lib/contract";
 import { getErrorMessage } from "@/lib/format";
+import { resolvePrice } from "@/shared/price";
 import {
   MOCK_DECIMALS,
   MOCK_MAX_BATCH,
@@ -83,7 +84,14 @@ export function useVault(mockMode: boolean) {
   const walletBalance = mockMode ? undefined : (walletBalanceQuery.data as bigint | undefined);
   const vaultBalance = mockMode ? undefined : (vaultBalanceQuery.data as bigint | undefined);
   const allowance = allowanceQuery.data as bigint | undefined;
-  const price = mockMode ? MOCK_PRICE_RAW : (priceQuery.data as bigint | undefined);
+  // PRICE() is a view and normally readable before the first transaction. If
+  // it reverts (token metadata missing or < 3 decimals), fall back to
+  // 5 * 10^(decimals - 3) from decimals() instead of leaving pricing blank.
+  const resolvedPrice = resolvePrice({
+    contractPrice: priceQuery.data as bigint | undefined,
+    decimals: decimals ?? null,
+  });
+  const price = mockMode ? MOCK_PRICE_RAW : (resolvedPrice.price ?? undefined);
   const maxBatch = mockMode ? MOCK_MAX_BATCH : (maxBatchQuery.data as number | undefined);
 
   const refresh = useCallback(async () => {
@@ -200,6 +208,7 @@ export function useVault(mockMode: boolean) {
     vaultBalance,
     allowance,
     price,
+    priceSource: mockMode ? "mock" : resolvedPrice.source,
     maxBatch,
     tx,
     deposit,

@@ -37,15 +37,35 @@ export const WALLETCONNECT_PROJECT_ID = envString(
   "",
 );
 
-/** 512 slots × 32 bytes = 16,384 pixels per getPixels call. */
+/**
+ * 1024 slots × 32 bytes = 32,768 pixels per getPixels call, so 8 calls for the
+ * whole canvas. The contract caps a call at MAX_READ_SLOTS (1024); the read
+ * adapter clamps to the on-chain value at runtime.
+ */
 export const CANVAS_CHUNK_SLOTS = Math.min(
   8192,
-  envNumber("NEXT_PUBLIC_CANVAS_CHUNK_SLOTS", 512),
+  envNumber("NEXT_PUBLIC_CANVAS_CHUNK_SLOTS", 1024),
 );
+
+/** Used when MAX_READ_SLOTS cannot be read (for example a transient RPC error). */
+export const MAX_READ_SLOTS_FALLBACK = 1024;
+
+/**
+ * DEV ONLY: adds a local Anvil test connector (well-known test key). Ignored
+ * unless the chain is 31337; see src/lib/local-dev-connector.ts.
+ */
+export const LOCAL_DEV_ENABLED =
+  process.env.NEXT_PUBLIC_LOCAL_DEV?.trim().toLowerCase() === "true";
+export const LOCAL_DEV_CHAIN_ID = 31337;
 
 export const robinhoodChain = defineChain({
   id: CHAIN_ID,
-  name: CHAIN_ID === DEFAULT_CHAIN_ID ? "Robinhood Chain" : `Robinhood Chain ${CHAIN_ID}`,
+  name:
+    CHAIN_ID === DEFAULT_CHAIN_ID
+      ? "Robinhood Chain"
+      : CHAIN_ID === LOCAL_DEV_CHAIN_ID
+        ? "Anvil Local"
+        : `Robinhood Chain ${CHAIN_ID}`,
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
     default: { http: [RPC_URL] },

@@ -12,11 +12,13 @@ import erc20AbiJson from "../../abi/ERC20.json";
 import {
   CANVAS_CHUNK_SLOTS,
   IMD_ADDRESS,
+  MAX_READ_SLOTS_FALLBACK,
   RPC_URL,
   VAULT_ADDRESS,
   robinhoodChain,
 } from "@/config/chains";
 import { CANVAS_PIXEL_COUNT, SLOT_BYTES, TOTAL_SLOTS } from "@/shared/palette";
+import { priceFromDecimals } from "@/shared/price";
 
 export const VAULT_ABI = vaultAbiJson as Abi;
 export const ERC20_ABI = erc20AbiJson as Abi;
@@ -93,15 +95,43 @@ export interface ReadCanvasOptions {
   onChunk?: (done: number, total: number) => void;
 }
 
+let cachedMaxReadSlots: number | null = null;
+
+/**
+ * The contract caps getPixels at MAX_READ_SLOTS (1024 slots = 32,768 bytes).
+ * Read it once instead of hard-coding the cap, with a safe fallback when the
+ * node cannot answer so canvas reads still work.
+ */
+export async function readMaxReadSlots(client = getReadClient()): Promise<number> {
+  if (cachedMaxReadSlots !== null) return cachedMaxReadSlots;
+  try {
+    const value = Number(
+      await client.readContract({
+        address: requireVault(),
+        abi: VAULT_ABI,
+        functionName: "MAX_READ_SLOTS",
+      }),
+    );
+    if (Number.isFinite(value) && value >= 1) {
+      cachedMaxReadSlots = Math.min(TOTAL_SLOTS, Math.floor(value));
+      return cachedMaxReadSlots;
+    }
+  } catch {
+    // Older/local builds without the constant: fall back below.
+  }
+  return MAX_READ_SLOTS_FALLBACK;
+}
+
 /**
  * Read all 262,144 canvas bytes using getPixels in chunks.
- * Default 512 slots = 16,384 pixels per call, so 16 calls.
+ * Default 1024 slots = 32,768 pixels per call, so 8 calls for the whole canvas.
  */
 export async function readCanvasFromRpc(options: ReadCanvasOptions = {}): Promise<Uint8Array> {
   const client = options.client ?? getReadClient();
+  const maxSlots = await readMaxReadSlots(client);
   const chunkSlots = Math.max(
     1,
-    Math.min(TOTAL_SLOTS, Math.floor(options.chunkSlots ?? CANVAS_CHUNK_SLOTS)),
+    Math.min(TOTAL_SLOTS, maxSlots, Math.floor(options.chunkSlots ?? CANVAS_CHUNK_SLOTS)),
   );
   const concurrency = Math.max(1, Math.min(8, options.concurrency ?? 4));
   const retries = Math.max(0, options.retries ?? 2);
@@ -183,6 +213,56 @@ export async function readPrice(client = getReadClient()): Promise<bigint> {
     abi: VAULT_ABI,
     functionName: "PRICE",
   })) as bigint;
+}
+
+/**
+ * PRICE() is a view and normally reads fine before the first transaction. If it
+ * reverts (token without ERC20 metadata or with < 3 decimals) fall back to the
+ * documented formula from the token's decimals.
+ */
+export async function readPriceWithFallback(
+  client = getReadClient(),
+): Promise<{ price: bigint | null; source: "contract" | "decimals" | "unavailable" }> {
+  let decimals: number | null = null;
+  try {
+    decimals = await readTokenDecimals(client);
+  } catch {
+    decimals = null;
+  }
+  try {
+    const price = await readPrice(client);
+    if (price > 0n) return { price, source: "contract" };
+  } catch {
+    // fall through to the decimals formula
+  }
+  const computed = priceFromDecimals(decimals);
+  return computed === null
+    ? { price: null, source: "unavailable" }
+    : { price: computed, source: "decimals" };
+}
+
+export async function readTotalBurned(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "totalBurned",
+  })) as bigint;
+}
+
+export async function readTotalDeposited(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "totalDeposited",
+  })) as bigint;
+}
+
+export async function readBurnAddress(client = getReadClient()): Promise<Address> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "BURN_ADDRESS",
+  })) as Address;
 }
 
 export async function readCurrentEpoch(client = getReadClient()): Promise<bigint> {

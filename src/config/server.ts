@@ -13,5 +13,7 @@ export function isMockMode(): boolean {
 
 export function serverCanvasChunkSlots(): number {
   const parsed = Number.parseInt(process.env.CANVAS_CHUNK_SLOTS ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.min(8192, parsed) : 512;
+  // 1024 slots is the contract's MAX_READ_SLOTS; readCanvasFromRpc clamps to
+  // the live value before every read.
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(8192, parsed) : 1024;
 }

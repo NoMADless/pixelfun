@@ -148,8 +148,8 @@ export function AboutView() {
             <summary className="cursor-pointer text-[11px] font-bold">What is burned?</summary>
             <p className="mt-2 text-[11px] leading-relaxed text-muted">
               The full pixel price in {TOKEN_SYMBOL}. It is not sent to a treasury or team wallet;
-              the vault burns it in the paint transaction. The site displays cumulative burned{" "}
-              {TOKEN_SYMBOL} from <code className="font-mono">totalPixelsPainted × PRICE</code>.
+              the vault transfers it to the dead address in the paint transaction. The site shows
+              the contract&apos;s own <code className="font-mono">totalBurned()</code> counter.
             </p>
           </details>
           <details className="border-2 border-line bg-panel p-3">
