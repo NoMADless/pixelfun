@@ -206,6 +206,51 @@ and Stage 3 were run explicitly.
   `npm run smoke` still cannot be proven against the real vault because IMD has not
   deployed it in this environment.
 
+## Stage 5: real IMD fork test
+
+- The fork suite (`npm run e2e:fork`) is opt-in. It reads `ROBINHOOD_RPC_URL` and
+  skips with exit 0 when it is unset, so a normal `npm test`/CI run never depends on
+  a public RPC. The official RPC was reachable from this machine; no alternate
+  endpoint was needed.
+- The token `0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127` is **not source-verified**
+  on Blockscout or Sourcify. Its facts were established with `eth_call`,
+  `eth_getCode`, `eth_getStorageAt`, runtime-selector scanning and fork
+  transactions. That is enough to test the paths PixelFun uses, not a substitute
+  for auditing the token.
+- IMD is treated as a LayerZero v2 OFT because `token()` returns itself, `endpoint()`
+  is set, `sharedDecimals()` is 6 and `decimalConversionRate()` is `1e12`. The
+  source is not available, so this classification is behavioral, not a source
+  claim. Local supply can change through LayerZero messages even though no public
+  `mint`/`burn` selector is exposed.
+- The owner is a single EOA (`0x047F606fD5b2BaA5f5C6c4aB8958E45CB6B054B7`) with a
+  recipient blocklist. The fork test impersonated that owner to call
+  `setBlocked(address,bool)` and then unblocked every address. No real owner key or
+  real transaction was used.
+- The blocklist is recipient-side. Blocking a painter stops a withdrawal **to** that
+  painter but does not stop the painter from spending an existing vault balance on
+  a paint, because the token transfer is `vault → dead`. An earlier test assumed
+  otherwise; the suite was corrected and the behavior is recorded in
+  [FORK_TEST.md](FORK_TEST.md).
+- The fork suite uses a publicly visible EOA holder from the top-holder list,
+  verifies that it has no code, a balance of at least 2 IMD and is not blocked, then
+  impersonates it on the fork. `IMD_HOLDER` overrides the list. If all listed
+  holders become unusable, the suite fails with a clear error rather than guessing.
+- The fork block and gas numbers in [FORK_TEST.md](FORK_TEST.md) are from the
+  2026-10-18 run at block `91,614,538`. The fork board was not full, so its
+  100-pixel gas (2,517,034) is lower than the full-board local number (2,712,676).
+- `setV4Config(address,address,bool)` and `poolManager()` exist; `poolManager()`
+  read zero at the test block. Their semantics are not exercised, and an unlisted
+  admin function cannot be ruled out without verified source.
+- The UI copy now says the pixel payment is **sent to the dead address** and is a
+  transfer, not a supply burn. Contract field names (`totalBurned`, `BURN_ADDRESS`,
+  the `burned` event field) and the `/api/stats` `burned` key are unchanged for ABI
+  and API compatibility; user-facing labels explain them.
+- No contract source was modified. The fork suite only deploys the existing
+  compiled artifact to a local Anvil fork.
+- The recommendation is a contract-integration **GO** but an announcement
+  **NO-GO** until the IMD owner's blocklist power is disclosed and accepted. That
+  is a product/trust decision, not a code result.
+
 ## Deployment
 
 - `NEXT_PUBLIC_*` values are inlined at build time. Redeploy after changing them.

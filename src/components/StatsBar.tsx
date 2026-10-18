@@ -31,9 +31,12 @@ export function StatsBar() {
           <span className="text-[8px] uppercase text-muted">px</span>
         </div>
 
-        <div className="flex items-baseline gap-1.5" title="Total IMD burned by painting">
+        <div
+          className="flex items-baseline gap-1.5"
+          title="IMD transferred to the dead address by painting (a transfer, not a supply burn)"
+        >
           <span className="text-[8px] font-bold uppercase tracking-wider text-muted">
-            Burned
+            To dead
           </span>
           <span className="pixel-font text-[10px] leading-none text-accent sm:text-sm">
             {data ? formatToken(burned, data.decimals, 4) : "—"}

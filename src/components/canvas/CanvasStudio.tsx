@@ -241,7 +241,7 @@ export function CanvasStudio() {
           notify(
             "success",
             `Painted ${ids.length} px (demo)`,
-            `${formatToken(BigInt(result.burnedRaw), MOCK_DECIMALS)} ${TOKEN_SYMBOL} burned in the mock canvas.`,
+            `${formatToken(BigInt(result.burnedRaw), MOCK_DECIMALS)} ${TOKEN_SYMBOL} sent to the demo dead address.`,
           );
           void canvas.refreshAfterPaint();
         } catch (error) {
@@ -303,7 +303,7 @@ export function CanvasStudio() {
         notify(
           "success",
           `Painted ${ids.length} px`,
-          `${costLabel} ${TOKEN_SYMBOL} burned on Robinhood Chain.`,
+          `${costLabel} ${TOKEN_SYMBOL} sent to the dead address on Robinhood Chain.`,
           explorerTxUrl(hashes[hashes.length - 1]),
         );
         void vault.refresh();

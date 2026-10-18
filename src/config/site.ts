@@ -19,4 +19,4 @@ export const SITE_ORIGIN = (() => {
 export const SITE_NAME = "PixelFun";
 export const SITE_TITLE = "PixelFun — fully on-chain pixel canvas";
 export const SITE_DESCRIPTION =
-  "Paint pixels on a shared 512×512 canvas on Robinhood Chain. 0.005 IMD per pixel, burned on-chain. No database, no indexer.";
+  "Paint pixels on a shared 512×512 canvas on Robinhood Chain. 0.005 IMD per pixel, sent to the dead address. No database, no indexer.";

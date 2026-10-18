@@ -29,8 +29,9 @@ This repository contains **Stages 1–4**:
 - Clear “contract not deployed yet” state when addresses are missing
 - Unit tests, ABI validation, an env validator and a deployed-vault smoke script
 - A repeatable local Anvil end-to-end suite against the real compiled artifact
+- A read-only **real-IMD fork suite** on Robinhood Chain, with admin-risk checks
 - A dev-only Anvil wallet connector for browser checks (chain 31337 only)
-- [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) and measured [GAS.md](GAS.md)
+- [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md), [FORK_TEST.md](FORK_TEST.md) and measured [GAS.md](GAS.md)
 
 ## Quick start (mock mode, no chain)
 
@@ -70,6 +71,8 @@ data, not launch proof.
 | `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` | no | Browser RPC fallback chunk size; default 1024 |
 | `PIXELFUN_ALLOW_UNDEPLOYED` | no | Set `1` only to run a production server without a vault |
 | `NEXT_PUBLIC_LOCAL_DEV` | no | DEV ONLY. `true` adds an Anvil test connector; requires chain 31337 |
+| `ROBINHOOD_RPC_URL` | fork test | RPC for `npm run e2e:fork`; the suite skips when unset |
+| `IMD_HOLDER` | no | Optional funded EOA to impersonate in `e2e:fork` |
 
 `/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
 need public values. There are no secrets in this stage.
@@ -90,7 +93,9 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=... # optional
 ```
 
 The app shows a “contract not deployed yet” screen until both addresses are
-provided. No admin/owner/pause UI exists.
+provided. The PixelFun vault has no admin/owner/pause UI. IMD itself is an
+owner-controlled token; [FORK_TEST.md](FORK_TEST.md) records its admin powers and
+the exact fork evidence.
 
 ### Startup validation
 
@@ -205,6 +210,28 @@ npm run check:abi
 The committed ABI is the artifact's `abi` array (45 entries). The local e2e suite
 fails if it ever drifts from the compiled artifact.
 
+## Real-token fork test (Robinhood Chain)
+
+This is the read-only bridge between “works on Anvil” and “safe to announce”. It
+forks the live Robinhood Chain, impersonates a funded IMD holder, deploys the real
+`PixelFun(IMD, 20)` with the real token, and sends transactions only on the local
+fork. No private key or real transaction is used.
+
+```bash
+ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com npm run e2e:fork
+```
+
+It checks the token facts (18 decimals, no proxy, LayerZero OFT, owner EOA, no
+public mint/burn), `PRICE() = 0.005 IMD`, exact deposit accounting with no transfer
+fee, 1/25/100-pixel paints, the dead-address balance and unchanged `totalSupply`,
+withdrawals, an epoch boundary, and the owner's blocklist powers. The last run was
+**121/121 checks passed**; see [FORK_TEST.md](FORK_TEST.md) for facts, gas and the
+go/no-go recommendation.
+
+Set `ANVIL_BIN` if Foundry is not on `PATH`, `IMD_HOLDER` to choose a different
+funded EOA, and `IMD_ADDRESS` to override the token. The suite skips with a clear
+message when `ROBINHOOD_RPC_URL` is unset.
+
 ## Local end-to-end test (Anvil)
 
 This is the real contract, compiled from the contract repo, on a local chain. It
@@ -292,6 +319,7 @@ npm run start      # serve the production build
 npm run check:abi  # compare ABI requirements with the committed ABIs
 npm run smoke      # read a deployed vault and print pass/fail
 npm run e2e:local  # full local Anvil suite against the real contract
+npm run e2e:fork   # real IMD fork suite (needs ROBINHOOD_RPC_URL)
 npm run assets     # regenerate OG image, favicons from the pixel-art script
 ```
 
@@ -306,6 +334,9 @@ and never sends a transaction.
 These are the exact steps once IMD publishes the vault address. Until then the
 app stays in mock mode or shows the explicit not-deployed screen.
 
+0. **Re-run the real-token fork suite.** Set `ROBINHOOD_RPC_URL` and run
+   `npm run e2e:fork`. It must pass 121/121 before you rely on the vault. Read
+   [FORK_TEST.md](FORK_TEST.md) and disclose the IMD owner's blocklist power.
 1. **Swap in the deployed values.** Set `NEXT_PUBLIC_CHAIN_ID=4663`,
    `NEXT_PUBLIC_RPC_URL` (a dedicated endpoint for public traffic),
    `NEXT_PUBLIC_EXPLORER_URL`, `NEXT_PUBLIC_VAULT_ADDRESS` and
@@ -350,11 +381,13 @@ app stays in mock mode or shows the explicit not-deployed screen.
 `npm test` covers pure logic: paint cost, MAX_BATCH batching, price fallback,
 gas buffer/out-of-gas detection, pixel pack/unpack, id↔x,y mapping, rank-gap
 calculation, CSV generation and countdown formatting. `npm run e2e:local` covers
-the real contract on Anvil with 302 checks at 18 and 6 decimals. Browser checks
-against a local Anvil deployment covered the canvas render, deposit, paint
-(with gas estimate), withdraw, live `Painted` updates, leaderboard, countdown,
-About and `/proof`.
+the real contract on Anvil with 302 checks at 18 and 6 decimals. `npm run e2e:fork`
+covers the real IMD token on a Robinhood Chain fork with 121 checks, including the
+owner blocklist. Browser checks against a local Anvil deployment covered the canvas
+render, deposit, paint (with gas estimate), withdraw, live `Painted` updates,
+leaderboard, countdown, About and `/proof`.
 
-See [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) for the audit report, [GAS.md](GAS.md)
-for the gas table, [ASSUMPTIONS.md](ASSUMPTIONS.md) for interface assumptions and
+See [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) for the audit report,
+[FORK_TEST.md](FORK_TEST.md) for the real-token evidence, [GAS.md](GAS.md) for the
+gas table, [ASSUMPTIONS.md](ASSUMPTIONS.md) for interface assumptions and
 [DEMO.md](DEMO.md) for the go-live/demo checklist.

@@ -12,6 +12,8 @@ import { formatCount, formatToken } from "@/lib/format";
 import { useRuntimeConfig } from "@/lib/runtime";
 import { TOKEN_SYMBOL } from "@/shared/palette";
 
+const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <a
@@ -62,8 +64,8 @@ export function ProofView() {
         <p className="text-[8px] font-bold uppercase tracking-wider text-muted">PX / PROOF</p>
         <h1 className="pixel-font mt-2 text-lg leading-relaxed sm:text-2xl">PROOF, NOT PROMISES.</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-          The canvas, vault and burn live on Robinhood Chain. This page collects the public proof:
-          contract address, verified source, launch references and demo transactions.
+          The canvas, vault and payments live on Robinhood Chain. This page collects the public
+          proof: contract address, verified source, launch references and demo transactions.
         </p>
       </header>
 
@@ -204,7 +206,7 @@ export function ProofView() {
             </div>
             <div className="border-2 border-line bg-bg p-2.5">
               <dt className="text-[8px] font-bold uppercase tracking-wider text-muted">
-                IMD burned
+                IMD to the dead address
               </dt>
               <dd className="pixel-font mt-1 text-[12px] text-accent">
                 {formatToken(BigInt(stats.burned), stats.decimals, 4)} {TOKEN_SYMBOL}
@@ -219,7 +221,12 @@ export function ProofView() {
           </dl>
         )}
         <p className="mt-2 text-[8px] leading-relaxed text-muted">
-          Values are public contract reads served by <code className="font-mono">/api/stats</code>.
+          Values are public contract reads served by <code className="font-mono">/api/stats</code>.{" "}
+          The IMD figure is <code className="font-mono">totalBurned()</code>: IMD transferred by
+          painting to{" "}
+          <ExternalLink href={explorerAddressUrl(DEAD_ADDRESS)}>{DEAD_ADDRESS}</ExternalLink>. It is
+          a transfer, not a supply burn; IMD <code className="font-mono">totalSupply</code> is not
+          reduced by painting.
           {stats?.mock ? " Mock mode is showing synthetic demo values, not launch proof." : ""}
         </p>
       </section>

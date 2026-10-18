@@ -17,10 +17,11 @@ CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_SITE_URL=https://your-domain.example
 ```
 
-Before touching the live vault, run the local suite against the same compiled
-artifact and ABI:
+Before touching the live vault, run the real-token fork suite and the local suite
+against the same compiled artifact and ABI:
 
 ```bash
+ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com npm run e2e:fork
 (cd ../launch-2148-dsa && forge build)
 npm run check:abi
 npm run e2e:local
@@ -29,6 +30,12 @@ npm run typecheck
 npm run lint
 ```
 
+`e2e:fork` must pass 121/121. It is read-only on Robinhood Chain and sends
+impersonated transactions only on a local Anvil fork. Read
+[FORK_TEST.md](FORK_TEST.md) before announcing: IMD has an owner who can block
+recipients, including the vault and the dead address. The site says this in About;
+the launch post must not call the payment a supply burn.
+
 Then run the read-only live checks before sending anything:
 
 ```bash
@@ -36,10 +43,11 @@ npm run smoke
 npm run build
 ```
 
-`check:abi` must pass 33/33 requirements. `e2e:local` must end in
-`302/302 checks passed`. `smoke` must print all `PASS` lines for `PRICE`, `WIDTH`,
-`HEIGHT`, `MIN_PIXELS`, `EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one
-`getPixels` chunk and `getBoard(currentEpoch)`.
+`check:abi` must pass 33/33 requirements. `e2e:fork` must end in
+`121/121 checks passed`; `e2e:local` must end in `302/302 checks passed`. `smoke`
+must print all `PASS` lines for `PRICE`, `WIDTH`, `HEIGHT`, `MIN_PIXELS`,
+`EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one `getPixels` chunk and
+`getBoard(currentEpoch)`.
 
 ## 0b. Deploy the website
 
@@ -69,13 +77,16 @@ with a chain other than 31337.
    - approval tx: `0x...`
    - deposit tx: `0x...`
 5. Confirm the Vault panel shows the deposited balance and the wallet balance
-   decreased by the same amount.
+   decreased by the same amount. The deposit must credit exactly what arrived; any
+   difference means the token charged a fee and the launch should stop.
 
 ## 3. Paint a small image
 
 1. Choose **Draw**, pick a color, and paint a recognizable 8×8 to 16×16 mark.
 2. Check the cost bar: pixels × `PRICE` in IMD.
-3. Press **Paint** and confirm the transaction.
+3. Press **Paint** and confirm the transaction. The payment goes to the dead
+   address `0x000000000000000000000000000000000000dEaD`; it is a transfer, not a
+   supply burn.
 4. Copy the paint transaction hash: `0x...`
 5. Wait for confirmation. The toast links to the transaction and the local canvas
    should update immediately; another browser should see it after the next poll.

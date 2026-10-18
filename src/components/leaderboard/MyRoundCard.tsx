@@ -111,6 +111,9 @@ export function MyRoundCard({ stats, board, isLoading, viewer, demoViewer }: Pro
             {pixels.toLocaleString()} / {stats.minPixels.toLocaleString()}
           </span>
         </div>
+        <p className="mt-1 text-[8px] leading-relaxed text-muted">
+          Rank is paid paints. Repainting a pixel counts again; every paint costs the same.
+        </p>
         <div className="mt-1 h-2 border-2 border-ink bg-bg">
           <div
             className={`h-full ${pixels >= stats.minPixels ? "bg-pfgreen" : "bg-accent"}`}

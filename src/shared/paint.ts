@@ -43,7 +43,7 @@ export function isOutOfGasError(error: unknown): boolean {
 
 /**
  * Cost of a paint in the token's smallest unit. The contract charges PRICE per
- * pixel, and the full amount is burned at paint time.
+ * pixel and transfers the full amount to its dead address at paint time.
  */
 export function paintCost(price: bigint, pixelCount: number): bigint {
   if (!Number.isInteger(pixelCount) || pixelCount < 0) {

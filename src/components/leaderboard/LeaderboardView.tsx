@@ -128,10 +128,13 @@ export function LeaderboardView() {
         </div>
 
         <p className="mt-3 border-t-2 border-line pt-2 text-[9px] leading-relaxed text-muted">
-          The top <span className="font-bold text-ink">{stats.boardSize}</span> addresses earn a
-          whitelist spot. A round&apos;s WL is <span className="font-bold text-ink">provisional</span>{" "}
-          until <code className="font-mono">epochEnded</code> is true for that epoch. Past rounds
-          are read from their frozen on-chain boards — no indexer.
+          Rank is paid paints: IMD sent to the dead address divided by 0.005. Repainting the same
+          pixel counts again at the same price. A whitelist spot needs at least{" "}
+          <span className="font-bold text-ink">{stats.minPixels}</span> paints and the top{" "}
+          <span className="font-bold text-ink">{stats.boardSize}</span> addresses qualify. A
+          round&apos;s WL is <span className="font-bold text-ink">provisional</span> until{" "}
+          <code className="font-mono">epochEnded</code> is true for that epoch. Past rounds are
+          read from their frozen on-chain boards — no indexer.
         </p>
       </section>
 
