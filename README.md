@@ -20,7 +20,8 @@ This repository contains **Stages 1–4**:
 - Wallet connect (injected + optional WalletConnect) and lazy network switching
 - Vault deposit (approve only when needed) and withdraw of the unspent balance
 - Draft painting with undo/clear, cost bar and MAX_BATCH transaction splitting
-- Header stats: cumulative pixels painted and IMD burned
+- Header stats: cumulative pixels painted and IMD sent to the dead address
+  (`totalBurned()`, a transfer — not a supply reduction)
 - Leaderboard: current top 66, countdown, my rank, rank gap to the top 66 and WL badges
 - Past rounds with on-demand frozen boards and CSV/copy whitelist export
 - About and Proof tabs, PNG canvas export, Share on X, OG/Twitter metadata and a pixel favicon
