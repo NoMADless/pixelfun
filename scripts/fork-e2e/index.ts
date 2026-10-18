@@ -7,7 +7,6 @@
  *
  * Optional:
  *   IMD_HOLDER=0x...          pick a specific funded EOA
- *   ROBINHOOD_FORK_BLOCK=...  pin the fork block
  *   ANVIL_BIN=/path/to/anvil  when Foundry is not on PATH
  */
 import {

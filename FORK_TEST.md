@@ -55,6 +55,7 @@ token. The site now states this plainly; the launch decision must include it.
 | Public mint / burn | **No** `mint(address,uint256)` or `burn(uint256)` selector in runtime bytecode | runtime selector scan |
 | Supply | 61,164.987469 IMD at the test block. **Not fixed**: the OFT bridge can mint/burn through its endpoint; no public mint/burn is exposed | `totalSupply()`, bytecode scan |
 | Blocklist | `blocked(address)`; owner-only `setBlocked(address,bool)` | owner call succeeds, non-owner call reverts `OwnableUnauthorizedAccount` |
+| Pause / limits / fees | No common `pause`, `paused`, `maxTx`, `maxWallet`, `cooldown`, `tradingEnabled`, `fee` or `blacklist` selectors found. Exact transfers showed no fee. Source is unverified, so only the exercised paths are proven | runtime selector scan + balance deltas |
 | Initial block state | dead address, vault and painter all `blocked = false` | `blocked()` |
 | Uniswap v4 config | `poolManager()` = `0x0` at the test block; `setV4Config(address,address,bool)` exists in bytecode | `eth_call`, selector scan |
 | Source verification | **Not verified** on Blockscout (`is_verified: false`); Sourcify has no match | Blockscout API, Sourcify v2 |
