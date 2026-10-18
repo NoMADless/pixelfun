@@ -148,15 +148,18 @@ and Stage 3 were run explicitly.
   `/api/stats`; the 0.005 IMD copy is only a fallback while the read is loading or
   the vault is not configured. “330 NFTs = 5 rounds × 66” is product copy, not a
   contract read.
-- `src/config/proof.ts` records the known launch number `2148` and the
-  `launch-2148-dsa` repo URL. Contract address, explorer, audit, demo tx, X account
-  and `deployedUnchanged` remain unset/false until confirmed; `/proof` says the
-  bytecode match is not yet confirmed rather than claiming one. Mock-mode numbers
-  on `/proof` are labeled demo data.
+- `src/config/proof.ts` records the known launch number `2148`, the
+  `launch-2148-dsa` repo URL, the vault and its explorer page, the deploy tx and
+  block, the verified source commit, the bytecode match and the seven labelled
+  demo transactions. The audit report stays unset because IMD's verifier is not a
+  third-party audit, and the X account stays unset until it exists. Mock-mode
+  numbers on `/proof` are labeled demo data.
 - PNG export renders the on-chain canvas bytes at 4× with nearest-neighbour
   scaling. Draft pixels are excluded so the downloaded image is the canonical
-  canvas, not a private preview. The X intent uses `NEXT_PUBLIC_SITE_URL` (default
-  `https://pixelfun.xyz`).
+  canvas, not a private preview. The X intent uses the resolved public origin: the
+  server-rendered `href` comes from `resolveSiteUrl()`, and the click handler
+  rewrites it to `window.location.origin`. There is no owned custom domain, so the
+  live origin is the Vercel production host.
 - OG image, favicon PNG/ICO and apple-touch icon are generated as static files by
   `scripts/generate-assets.ts`, so no runtime image service or font fetch is needed.
 - Error boundaries use Next 16's `retry` prop. Each route has a boundary; the root
