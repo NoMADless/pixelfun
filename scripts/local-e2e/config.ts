@@ -23,6 +23,10 @@ export const CONFIG = {
   forgeBin: envString("FORGE_BIN", "forge"),
   /** Anvil chain id. The app's dev connector only allows 31337. */
   chainId: 31337,
+  /** The public network the fork suite replays (Robinhood Chain mainnet). */
+  forkChainId: 4663,
+  /** Real IMD token on Robinhood Chain (read-only; fork transactions only). */
+  forkToken: "0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127",
   anvilPort: envInt("E2E_ANVIL_PORT", 0),
   /** Anvil's documented default mnemonic (never a real key). */
   mnemonic: "test test test test test test test test test test test junk",

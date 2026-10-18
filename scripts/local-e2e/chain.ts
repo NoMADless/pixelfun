@@ -4,6 +4,7 @@ import {
   createWalletClient,
   http,
   type Address,
+  type Chain,
   type Hash,
   type Hex,
   type PublicClient,
@@ -28,16 +29,21 @@ export interface Wallet {
 
 export interface ChainContext {
   url: string;
+  chain: Chain;
   publicClient: PublicClient;
-  testClient: TestClient<"anvil", Transport, typeof anvil>;
+  testClient: TestClient<"anvil", Transport, Chain>;
   wallets: Wallet[];
   walletClient: (wallet: Wallet) => WalletClient;
   deployer: Wallet;
 }
 
-export function createChainContext(url: string): ChainContext {
-  const publicClient = createPublicClient({ chain: anvil, transport: http(url) });
-  const testClient = createTestClient({ chain: anvil, mode: "anvil", transport: http(url) });
+export function createChainContext(url: string, chainId: number = CONFIG.chainId): ChainContext {
+  const chain: Chain =
+    chainId === anvil.id
+      ? anvil
+      : { ...anvil, id: chainId, name: chainId === CONFIG.forkChainId ? "Fork" : `Chain ${chainId}` };
+  const publicClient = createPublicClient({ chain, transport: http(url) });
+  const testClient = createTestClient({ chain, mode: "anvil", transport: http(url) });
   const wallets: Wallet[] = Array.from({ length: CONFIG.walletCount }, (_, index) => ({
     address: mnemonicToAccount(CONFIG.mnemonic, { addressIndex: index }).address,
     index,
@@ -46,13 +52,14 @@ export function createChainContext(url: string): ChainContext {
   const walletClient = (wallet: Wallet): WalletClient =>
     createWalletClient({
       account: mnemonicToAccount(CONFIG.mnemonic, { addressIndex: wallet.index }),
-      chain: anvil,
+      chain,
       transport: http(url),
     });
 
   if (wallets.length === 0) throw new Error("No anvil wallets configured.");
   return {
     url,
+    chain,
     publicClient,
     testClient,
     wallets,
@@ -94,7 +101,7 @@ export async function deployArtifact(
     bytecode: artifact.bytecode,
     args,
     account: client.account!,
-    chain: anvil,
+    chain: chain.chain,
   });
   const receipt = await waitFor(chain.publicClient, hash);
   if (!receipt.contractAddress) throw new Error(`Deployment ${hash} has no address.`);
@@ -135,7 +142,7 @@ export class MockIMD {
       functionName: "mint",
       args: [to, amount],
       account: client.account!,
-      chain: anvil,
+      chain: this.chain.chain,
     });
     await waitFor(this.chain.publicClient, hash);
   }
@@ -148,7 +155,7 @@ export class MockIMD {
       functionName: "approve",
       args: [spender, amount],
       account: client.account!,
-      chain: anvil,
+      chain: this.chain.chain,
     });
     await waitFor(this.chain.publicClient, hash);
   }
@@ -186,7 +193,7 @@ export class Vault {
       functionName,
       args,
       account: client.account!,
-      chain: anvil,
+      chain: this.chain.chain,
     });
     return waitFor(this.chain.publicClient, hash);
   }

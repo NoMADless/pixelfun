@@ -40,9 +40,13 @@ function readArtifact(relativePath: string, label: string): Artifact {
   return { abi, bytecode: code };
 }
 
+export function loadVaultArtifact(): Artifact {
+  return readArtifact(ARTIFACTS.vault, "PixelFun");
+}
+
 export function loadArtifacts(): { vault: Artifact; token: Artifact } {
   return {
-    vault: readArtifact(ARTIFACTS.vault, "PixelFun"),
+    vault: loadVaultArtifact(),
     token: readArtifact(ARTIFACTS.token, "CanvasToken (mock IMD)"),
   };
 }

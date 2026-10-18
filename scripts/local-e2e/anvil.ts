@@ -28,21 +28,32 @@ export interface AnvilHandle {
   stop: () => Promise<void>;
 }
 
-export async function startAnvil(): Promise<AnvilHandle> {
+export interface AnvilOptions {
+  /** Fork this RPC's state. Omit for a clean local chain. */
+  forkUrl?: string;
+  /** Defaults to CONFIG.chainId (31337). */
+  chainId?: number;
+  /** Defaults to CONFIG.walletCount. */
+  accounts?: number;
+}
+
+export async function startAnvil(options: AnvilOptions = {}): Promise<AnvilHandle> {
   const port = CONFIG.anvilPort > 0 ? CONFIG.anvilPort : await freePort();
+  const chainId = options.chainId ?? CONFIG.chainId;
   const args = [
     "--port",
     String(port),
     "--chain-id",
-    String(CONFIG.chainId),
+    String(chainId),
     "--accounts",
-    String(CONFIG.walletCount),
+    String(options.accounts ?? CONFIG.walletCount),
     "--balance",
     "1000000",
     "--mnemonic",
     CONFIG.mnemonic,
     "--silent",
   ];
+  if (options.forkUrl) args.push("--fork-url", options.forkUrl);
 
   const child: ChildProcess = spawn(CONFIG.anvilBin, args, {
     stdio: ["ignore", "pipe", "pipe"],
@@ -60,7 +71,8 @@ export async function startAnvil(): Promise<AnvilHandle> {
   });
 
   const url = `http://127.0.0.1:${port}`;
-  const client = createPublicClient({ chain: anvil, transport: http(url) });
+  const chain = chainId === anvil.id ? anvil : { ...anvil, id: chainId };
+  const client = createPublicClient({ chain, transport: http(url) });
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
     if (state.exited) {
@@ -69,9 +81,11 @@ export async function startAnvil(): Promise<AnvilHandle> {
       );
     }
     try {
-      const chainId = await client.getChainId();
-      if (chainId === CONFIG.chainId) {
-        console.log(`anvil listening on ${url} (chain ${chainId})`);
+      const actualChainId = await client.getChainId();
+      if (actualChainId === chainId) {
+        console.log(
+          `anvil listening on ${url} (chain ${actualChainId}${options.forkUrl ? `, forked from ${options.forkUrl}` : ""})`,
+        );
         return {
           url,
           port,

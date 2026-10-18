@@ -13,7 +13,8 @@
     "assets": "tsx scripts/generate-assets.ts",
     "check:abi": "tsx scripts/check-abi.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "e2e:local": "tsx scripts/local-e2e/index.ts"
+    "e2e:local": "tsx scripts/local-e2e/index.ts",
+    "e2e:fork": "tsx scripts/fork-e2e/index.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.4",
