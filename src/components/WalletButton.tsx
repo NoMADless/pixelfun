@@ -29,15 +29,8 @@ export function WalletButton() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const wrongNetwork = mounted && isConnected && chainId !== CHAIN_ID;
-
-  if (!mounted) {
-    return (
-      <button type="button" className="pixel-btn h-9 px-3 text-[11px]" disabled>
-        Connect
-      </button>
-    );
-  }
+  const showAccount = mounted && isConnected && Boolean(address);
+  const wrongNetwork = showAccount && chainId !== CHAIN_ID;
 
   return (
     <>
@@ -51,7 +44,7 @@ export function WalletButton() {
           wrongNetwork ? "border-accent text-accent" : ""
         }`}
       >
-        {address ? (
+        {showAccount && address ? (
           <span className="flex items-center gap-1.5">
             <span
               className={`h-2 w-2 ${wrongNetwork ? "bg-accent" : "bg-pfgreen"}`}
@@ -90,7 +83,7 @@ export function WalletButton() {
               </button>
             </div>
 
-            {isConnected && address ? (
+            {showAccount && address ? (
               <div className="space-y-3">
                 <div className="border-2 border-line bg-bg p-3">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-muted">

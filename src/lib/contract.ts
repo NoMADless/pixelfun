@@ -167,6 +167,130 @@ export async function readTokenDecimals(client = getReadClient()): Promise<numbe
   return Number(decimals);
 }
 
+/* ------------------------------- epoch reads ------------------------------- */
+
+export async function readTotalPixelsPainted(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "totalPixelsPainted",
+  })) as bigint;
+}
+
+export async function readPrice(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "PRICE",
+  })) as bigint;
+}
+
+export async function readCurrentEpoch(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "currentEpoch",
+  })) as bigint;
+}
+
+export async function readEpochStart(epoch: bigint, client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "epochStart",
+    args: [epoch],
+  })) as bigint;
+}
+
+export async function readEpochEnd(epoch: bigint, client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "epochEnd",
+    args: [epoch],
+  })) as bigint;
+}
+
+export async function readEpochEnded(epoch: bigint, client = getReadClient()): Promise<boolean> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "epochEnded",
+    args: [epoch],
+  })) as boolean;
+}
+
+export async function readEpochLength(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "EPOCH_LENGTH",
+  })) as bigint;
+}
+
+export async function readMinPixels(client = getReadClient()): Promise<number> {
+  return Number(
+    await client.readContract({
+      address: requireVault(),
+      abi: VAULT_ABI,
+      functionName: "MIN_PIXELS",
+    }),
+  );
+}
+
+export async function readBoardSize(client = getReadClient()): Promise<number> {
+  return Number(
+    await client.readContract({
+      address: requireVault(),
+      abi: VAULT_ABI,
+      functionName: "BOARD_SIZE",
+    }),
+  );
+}
+
+export async function readPixelsPaintedIn(
+  epoch: bigint,
+  painter: Address,
+  client = getReadClient(),
+): Promise<number> {
+  return Number(
+    await client.readContract({
+      address: requireVault(),
+      abi: VAULT_ABI,
+      functionName: "pixelsPaintedIn",
+      args: [epoch, painter],
+    }),
+  );
+}
+
+export async function readIsWhitelisted(
+  epoch: bigint,
+  painter: Address,
+  client = getReadClient(),
+): Promise<boolean> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "isWhitelisted",
+    args: [epoch, painter],
+  })) as boolean;
+}
+
+export interface RawBoard {
+  painters: Address[];
+  counts: number[];
+}
+
+export async function readBoard(epoch: bigint, client = getReadClient()): Promise<RawBoard> {
+  const [painters, counts] = (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "getBoard",
+    args: [epoch],
+  })) as readonly [readonly Address[], readonly number[]];
+  return { painters: [...painters], counts: counts.map(Number) };
+}
+
 /* ---------------------------- read config builders ---------------------------- */
 
 /**

@@ -1,11 +1,19 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
-function subscribe(): () => void {
-  return () => {};
-}
-
+/**
+ * False during SSR and the hydration pass, true after the first paint. Use this
+ * to render server-stable markup for values owned by the browser (wallet
+ * session, clock, pathname-dependent chrome).
+ */
 export function useMounted(): boolean {
-  return useSyncExternalStore(subscribe, () => true, () => false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return mounted;
 }

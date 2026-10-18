@@ -1,11 +1,11 @@
-# PixelFun — Stage 1
+# PixelFun — Stages 1–2
 
 A fully on-chain 512×512 collaborative pixel canvas on Robinhood Chain.
 Paint any pixel for 0.005 IMD, burned by the vault contract. **No database, no
 indexer, no backend state**: the app reads pixels straight from the contract and
 applies live `Painted` events.
 
-This repository currently contains **Stage 1** only:
+This repository currently contains **Stages 1–2**:
 
 - Next.js App Router + TypeScript strict + wagmi/viem
 - Robinhood Chain config (chain ID, RPC, explorer verified from official sources)
@@ -16,10 +16,13 @@ This repository currently contains **Stage 1** only:
 - Wallet connect (injected + optional WalletConnect) and network switching
 - Vault deposit (approve only when needed) and withdraw
 - Draft painting with undo/clear, cost bar, auto-split transactions
-- `MOCK_MODE` with an in-memory canvas and localStorage fake vault
+- Header stats: cumulative pixels painted and IMD burned
+- Leaderboard tab: current top 66, countdown, my rank, pixel minimum and WL badges
+- Past rounds with on-demand frozen boards and CSV/copy whitelist export
+- `MOCK_MODE` with an in-memory canvas, round boards and localStorage fake vault
 - Clear “contract not deployed yet” state when addresses are missing
 
-Leaderboard, past rounds, CSV export, About/Proof, PNG/share/OG are Stage 2 and 3.
+About/Proof, PNG/share/OG, automated tests and final deploy notes remain Stage 3.
 
 ## Quick start (mock mode, no chain)
 
@@ -33,12 +36,14 @@ npm run dev
 Open <http://localhost:3000>. Mock mode uses:
 
 - a server-memory canvas seeded with pixel art at `/api/canvas`
-- `/api/mock/paint` to persist mock paint actions
+- `/api/mock/paint` to persist mock paint actions and update the round board
+- `/api/stats` and `/api/leaderboard?epoch=N` with two completed rounds and a live round
 - a localStorage vault per address, starting at 50 IMD, with a +100 faucet
 - demo painter `0x000000000000000000000000000000000000dead` when no wallet is connected
 
-Mock state resets when the dev server restarts (canvas) or localStorage is cleared
-(vault). It is not durable and not safe for a multi-instance serverless deployment.
+Mock state resets when the dev server restarts (canvas and boards) or localStorage
+is cleared (vault). It is not durable and not safe for a multi-instance serverless
+deployment. Mock board counts are synthetic demo data.
 
 ## Real mode
 
@@ -88,6 +93,26 @@ and explorer.
 
 `MOCK_MODE` serves the same API shape from an in-memory canvas.
 
+## Leaderboard without an indexer
+
+- `/api/stats` reads `totalPixelsPainted`, `PRICE`, token decimals, `currentEpoch`,
+  epoch start/end/ended, `MIN_PIXELS`, `BOARD_SIZE` and `EPOCH_LENGTH` server-side.
+  Burned total is `totalPixelsPainted × PRICE`. It is cached for 4s at the CDN.
+- `/api/leaderboard?epoch=N` reads `getBoard(N)`, `epochEnded(N)` and `BOARD_SIZE`.
+  Ended boards are cached for an hour; the live board for 4s.
+- Adding `viewer=0x…` returns that address's `pixelsPaintedIn`, rank and
+  `isWhitelisted`. Those responses are `private, no-store` because they are
+  wallet-specific.
+- The current board is polled every 10s. Past boards load only when expanded, so
+  old rounds never fan out RPC calls on page load.
+- Rank is only readable from the contract for the top `BOARD_SIZE` (66). An address
+  below the board shows its pixel count with rank `—`; exact rank below 66 would
+  require an indexer, which this app deliberately does not have.
+- WL badges are provisional (`WL*`) until the round reports `epochEnded = true`.
+  Past-round CSV export is disabled until that flag is true.
+- CSV format is one lowercase address per line, no header, trailing newline —
+  OpenSea allowlist friendly. The file is `pixelfun-round-N-wl.csv`.
+
 ## Contract adapter
 
 Everything contract-related lives in `src/lib/contract.ts`:
@@ -96,6 +121,8 @@ Everything contract-related lives in `src/lib/contract.ts`:
 - addresses and chain from `src/config/chains.ts`
 - chunked `getPixels` reader, log reader, token helpers
 - wagmi read configs for decimals, balances, allowance, `PRICE` and `MAX_BATCH`
+- epoch reads (`currentEpoch`, start/end/ended, `MIN_PIXELS`, `BOARD_SIZE`, `EPOCH_LENGTH`)
+- board reads (`getBoard`, `pixelsPaintedIn`, `isWhitelisted`, `totalPixelsPainted`)
 - write request builders (`paintCall`, `depositCall`, `withdrawCall`, `approveCall`)
 
 When the swarm ships the final ABI, replace `abi/PixelFunVault.json` and adjust only
@@ -111,9 +138,12 @@ npm run build      # production build
 npm run start      # serve the production build
 ```
 
-Verified in this stage: `typecheck`, `lint`, `build`, mock `/api/canvas` payload
-(262,144 bytes, 3,126 seeded pixels), mock tap → Paint → pixel byte update,
-mock deposit/faucet, undo, zoom, and the not-deployed state.
+Verified after Stage 2: `typecheck`, `lint`, `build`, mock `/api/canvas` payload
+(262,144 bytes, 3,126 seeded pixels), tap → Paint → pixel byte update, mock
+stats/boards and viewer rank, countdown ticking, board refresh after paint,
+past-round expansion, CSV download contents and filename, copy-to-clipboard,
+and the not-deployed state. Production hydration was checked with a clean
+console on `/` and `/leaderboard`.
 
 ## Deploy to Vercel
 
@@ -123,14 +153,14 @@ mock deposit/faucet, undo, zoom, and the not-deployed state.
    `MOCK_MODE` is read when the page is built and by the API at request time, so set
    it before the build and keep it consistent across build and runtime.
 3. Deploy. No database, cron, or serverless storage is required.
-4. The canvas route runs as a Node serverless function. RPC env values are public
-   endpoints; there are no secrets in this stage.
+4. `/api/canvas`, `/api/stats` and `/api/leaderboard` run as Node serverless
+   functions. RPC env values are public endpoints; there are no secrets in this stage.
+5. Viewer-specific leaderboard responses are `private, no-store`; public boards and
+   canvas responses are CDN-cached as described above.
 
-## Stage 2/3 remaining
+## Stage 3 remaining
 
-- Stage 2: header stats (`totalPixelsPainted`, burned), current/past boards,
-  countdown, rank vs `MIN_PIXELS`, WL badges and CSV/copy export.
-- Stage 3: About + Proof pages, PNG export, X share, OG image, favicon, tests, final
-  deploy notes.
+- About + Proof pages, PNG export, X share, OG image, favicon, automated tests and
+  final deploy notes.
 
 See [ASSUMPTIONS.md](ASSUMPTIONS.md) for the interface assumptions and open items.

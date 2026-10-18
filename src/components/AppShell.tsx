@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { StatsBar } from "./StatsBar";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
+import { useMounted } from "@/lib/hooks/useMounted";
 import { useRuntimeConfig } from "@/lib/runtime";
+
+const TABS = [
+  { href: "/", label: "Canvas" },
+  { href: "/leaderboard", label: "Leaderboard" },
+] as const;
 
 function Logo() {
   return (
@@ -25,6 +33,8 @@ function Logo() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { mockMode } = useRuntimeConfig();
+  const mounted = useMounted();
+  const pathname = usePathname();
 
   return (
     <>
@@ -39,11 +49,36 @@ export function AppShell({ children }: { children: ReactNode }) {
               Demo
             </span>
           )}
+          <nav
+            aria-label="Main"
+            className="order-last flex w-full items-center gap-1 border-t-2 border-line pt-1.5 sm:order-none sm:ml-2 sm:w-auto sm:border-0 sm:pt-0"
+          >
+            {TABS.map((tab) => {
+              const active =
+                mounted &&
+                (tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href));
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`border-2 px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
+                    active
+                      ? "border-ink bg-ink text-bg"
+                      : "border-line text-muted hover:border-ink hover:text-ink"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </nav>
           <span className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <WalletButton />
           </span>
         </div>
+        <StatsBar />
       </header>
       <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       <footer className="border-t-2 border-line px-3 py-3 text-center text-[10px] text-muted">

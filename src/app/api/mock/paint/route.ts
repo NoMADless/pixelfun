@@ -1,6 +1,7 @@
 import { isAddress } from "viem";
 import { isMockMode } from "@/config/server";
 import { applyMockPaint } from "@/server/mock-canvas";
+import { recordMockPaint } from "@/server/mock-leaderboard";
 
 export async function POST(request: Request) {
   if (!isMockMode()) {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       colors: body.colors,
       painter: body.painter,
     });
+    recordMockPaint(body.painter, result.pixelCount);
     return Response.json(
       { ok: true, ...result },
       { headers: { "Cache-Control": "no-store" } },
