@@ -48,6 +48,46 @@ export function whitelistCsv(board: readonly Pick<BoardEntry, "address">[]): str
   return `${board.map((entry) => entry.address.toLowerCase()).join("\n")}\n`;
 }
 
+export interface TopGapInput {
+  /** Pixels the viewer has painted in this round. */
+  myPixels: number;
+  minPixels: number;
+  boardSize: number;
+  /** Board counts, sorted descending, as returned by getBoard. */
+  boardCounts: readonly number[];
+  /** 1-based rank when the viewer is on the returned board, otherwise null. */
+  myRank?: number | null;
+}
+
+/**
+ * Pixels still needed to secure a top-66 spot.
+ *
+ * A full board requires strictly more than the lowest entry because the
+ * contract rejects ties. A non-full board only requires MIN_PIXELS. Returning
+ * 0 means the viewer is already on the board (or has already cleared the bar).
+ */
+export function pixelsToEnterTop({
+  myPixels,
+  minPixels,
+  boardSize,
+  boardCounts,
+  myRank,
+}: TopGapInput): number {
+  const pixels = Math.max(0, Math.floor(Number.isFinite(myPixels) ? myPixels : 0));
+  const minimum = Math.max(0, Math.floor(Number.isFinite(minPixels) ? minPixels : 0));
+  const size = Math.max(1, Math.floor(Number.isFinite(boardSize) ? boardSize : 1));
+
+  if (typeof myRank === "number" && myRank >= 1 && myRank <= size) return 0;
+
+  const counts = boardCounts
+    .filter((count) => Number.isFinite(count))
+    .map((count) => Math.max(0, Math.floor(count)));
+  const full = counts.length >= size;
+  const threshold = full ? Math.max(minimum, Math.min(...counts) + 1) : minimum;
+
+  return Math.max(0, threshold - pixels);
+}
+
 export function epochList(currentEpoch: string | bigint): string[] {
   const current = typeof currentEpoch === "bigint" ? currentEpoch : BigInt(currentEpoch);
   if (current <= 0n) return [];

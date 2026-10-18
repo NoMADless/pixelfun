@@ -1,7 +1,7 @@
 "use client";
 
 import { shortenAddress } from "@/lib/format";
-import type { BoardResponse, LeaderboardStats } from "@/shared/leaderboard";
+import { pixelsToEnterTop, type BoardResponse, type LeaderboardStats } from "@/shared/leaderboard";
 
 interface Props {
   stats: LeaderboardStats;
@@ -69,7 +69,14 @@ export function MyRoundCard({ stats, board, isLoading, viewer, demoViewer }: Pro
     badgeClass = "border-glow bg-glow/20 text-ink";
   }
 
-  const missing = Math.max(0, stats.minPixels - pixels);
+  const topGap = pixelsToEnterTop({
+    myPixels: pixels,
+    minPixels: stats.minPixels,
+    boardSize: board.boardSize,
+    boardCounts: board.board.map((entry) => entry.count),
+    myRank: rank,
+  });
+  const onBoard = rank !== null && rank <= board.boardSize;
 
   return (
     <section className="pixel-panel p-3">
@@ -112,28 +119,44 @@ export function MyRoundCard({ stats, board, isLoading, viewer, demoViewer }: Pro
         </div>
       </div>
 
+      {!board.ended && (
+        <div className="mt-2 flex items-center justify-between gap-2 border-2 border-line bg-bg px-2 py-1.5 text-[9px]">
+          <span className="font-bold uppercase tracking-wide text-muted">To top {board.boardSize}</span>
+          <span className="font-mono text-ink">
+            {onBoard ? "ON BOARD" : `${topGap.toLocaleString()} px`}
+          </span>
+        </div>
+      )}
+
       <div className="mt-3 border-t-2 border-line pt-2 text-[9px] leading-relaxed text-muted">
-        {missing > 0 ? (
+        {board.ended ? (
+          whitelisted ? (
+            <p>Your address is on this round&apos;s frozen whitelist.</p>
+          ) : (
+            <p>This round is final and your address is outside the top {board.boardSize}.</p>
+          )
+        ) : onBoard ? (
           <p>
-            Paint <span className="font-bold text-ink">{missing.toLocaleString()}</span> more
-            pixels this round to reach the minimum.
+            Whitelist is <span className="font-bold text-ink">provisional</span> until the round
+            ends and <code className="font-mono">epochEnded</code> is true.
+          </p>
+        ) : topGap > 0 ? (
+          <p>
+            Paint <span className="font-bold text-ink">{topGap.toLocaleString()}</span> more
+            pixels to enter the top {board.boardSize}.
+            {pixels < stats.minPixels
+              ? ` The minimum is ${stats.minPixels.toLocaleString()} px.`
+              : board.board.length >= board.boardSize
+                ? " The last spot needs strictly more than the current lowest score."
+                : ""}
           </p>
         ) : rank === null ? (
           <p>
             Rank below the top {board.boardSize} is not exposed by the contract. An indexer would
             be needed to show it — this app deliberately has none.
           </p>
-        ) : !board.ended && inWhitelist ? (
-          <p>
-            Whitelist is <span className="font-bold text-ink">provisional</span> until the round
-            ends and <code className="font-mono">epochEnded</code> is true.
-          </p>
-        ) : board.ended && whitelisted ? (
-          <p>Your address is on this round&apos;s frozen whitelist.</p>
-        ) : board.ended ? (
-          <p>This round is final and your address is outside the top {board.boardSize}.</p>
         ) : (
-          <p>Keep painting to climb into the top {board.boardSize} before the round ends.</p>
+          <p>Keep painting to secure your top {board.boardSize} position before the round ends.</p>
         )}
       </div>
     </section>

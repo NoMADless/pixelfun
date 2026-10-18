@@ -1,5 +1,7 @@
 import {
+  CANVAS_HEIGHT,
   CANVAS_PIXEL_COUNT,
+  CANVAS_WIDTH,
   PALETTE_SIZE,
   SLOT_BYTES,
   TOTAL_SLOTS,
@@ -14,6 +16,28 @@ export function createEmptyCanvas(): Uint8Array {
 
 export function isValidPixelId(id: number): boolean {
   return Number.isInteger(id) && id >= 0 && id < CANVAS_PIXEL_COUNT;
+}
+
+/** Canvas ids are row-major: id = y * 512 + x. */
+export function pixelIdFromXY(x: number, y: number): number {
+  if (
+    !Number.isInteger(x) ||
+    !Number.isInteger(y) ||
+    x < 0 ||
+    y < 0 ||
+    x >= CANVAS_WIDTH ||
+    y >= CANVAS_HEIGHT
+  ) {
+    throw new RangeError(`Pixel (${x}, ${y}) is outside the ${CANVAS_WIDTH}×${CANVAS_HEIGHT} canvas.`);
+  }
+  return y * CANVAS_WIDTH + x;
+}
+
+export function xyFromPixelId(id: number): { x: number; y: number } {
+  if (!isValidPixelId(id)) {
+    throw new RangeError(`Pixel id ${id} is outside the canvas.`);
+  }
+  return { x: id % CANVAS_WIDTH, y: Math.floor(id / CANVAS_WIDTH) };
 }
 
 /** Apply paint(ids, colors) where colors are palette indexes 0..31. */

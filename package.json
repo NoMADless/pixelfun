@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "assets": "tsx scripts/generate-assets.ts",
+    "check:abi": "tsx scripts/check-abi.ts",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.4",
@@ -27,6 +32,7 @@
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

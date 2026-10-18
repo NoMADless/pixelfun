@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMounted } from "@/lib/hooks/useMounted";
+import { countdownParts } from "@/shared/time";
 
 interface Props {
   epochEnd: string;
@@ -50,10 +51,7 @@ export function Countdown({ epochEnd, ended, serverTime }: Props) {
 
   const endMs = Number(epochEnd) * 1_000;
   const remaining = Math.max(0, endMs - (now + offset));
-  const days = Math.floor(remaining / 86_400_000);
-  const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
-  const minutes = Math.floor((remaining % 3_600_000) / 60_000);
-  const seconds = Math.floor((remaining % 60_000) / 1_000);
+  const { days, hours, minutes, seconds } = countdownParts(remaining);
 
   if (ended) {
     return (

@@ -1,0 +1,53 @@
+export interface PaintBatch {
+  ids: number[];
+  colors: number[];
+}
+
+/**
+ * Cost of a paint in the token's smallest unit. The contract charges PRICE per
+ * pixel, and the full amount is burned at paint time.
+ */
+export function paintCost(price: bigint, pixelCount: number): bigint {
+  if (!Number.isInteger(pixelCount) || pixelCount < 0) {
+    throw new RangeError("pixelCount must be a non-negative integer.");
+  }
+  if (price < 0n) throw new RangeError("price must not be negative.");
+  return price * BigInt(pixelCount);
+}
+
+/** Number of transactions needed for a paint, given the contract MAX_BATCH. */
+export function batchCount(pixelCount: number, maxBatch: number): number {
+  if (!Number.isInteger(pixelCount) || pixelCount < 0) {
+    throw new RangeError("pixelCount must be a non-negative integer.");
+  }
+  if (!Number.isInteger(maxBatch) || maxBatch < 1) {
+    throw new RangeError("maxBatch must be a positive integer.");
+  }
+  return Math.ceil(pixelCount / maxBatch);
+}
+
+/**
+ * Split ids/colors into contract-sized batches. The contract takes ids and
+ * colors as parallel arrays, so both sides are always sliced together.
+ */
+export function splitPaintBatches(
+  ids: readonly number[],
+  colors: readonly number[],
+  maxBatch: number,
+): PaintBatch[] {
+  if (ids.length !== colors.length) {
+    throw new Error("ids and colors must have the same length.");
+  }
+  if (!Number.isInteger(maxBatch) || maxBatch < 1) {
+    throw new RangeError("maxBatch must be a positive integer.");
+  }
+
+  const batches: PaintBatch[] = [];
+  for (let offset = 0; offset < ids.length; offset += maxBatch) {
+    batches.push({
+      ids: ids.slice(offset, offset + maxBatch),
+      colors: colors.slice(offset, offset + maxBatch),
+    });
+  }
+  return batches;
+}
