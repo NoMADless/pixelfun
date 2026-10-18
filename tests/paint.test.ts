@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { batchCount, paintCost, splitPaintBatches } from "@/shared/paint";
+import {
+  batchCount,
+  gasLimitWithBuffer,
+  isOutOfGasError,
+  paintCost,
+  splitPaintBatches,
+} from "@/shared/paint";
 
 const PRICE = 5_000_000_000_000_000n; // 0.005 IMD at 18 decimals
 
@@ -15,6 +21,35 @@ describe("paintCost", () => {
   it("rejects fractional and negative counts", () => {
     expect(() => paintCost(PRICE, 1.5)).toThrow(RangeError);
     expect(() => paintCost(PRICE, -1)).toThrow(RangeError);
+  });
+});
+
+describe("gasLimitWithBuffer", () => {
+  it("adds 20% and rounds up", () => {
+    expect(gasLimitWithBuffer(2_712_676n)).toBe(3_255_212n);
+    expect(gasLimitWithBuffer(100n)).toBe(120n);
+    expect(gasLimitWithBuffer(101n)).toBe(122n);
+  });
+
+  it("rejects a zero estimate", () => {
+    expect(() => gasLimitWithBuffer(0n)).toThrow(RangeError);
+  });
+});
+
+describe("isOutOfGasError", () => {
+  it("detects common node and wallet out-of-gas messages", () => {
+    expect(isOutOfGasError(new Error("out of gas"))).toBe(true);
+    expect(isOutOfGasError(new Error("intrinsic gas too low"))).toBe(true);
+    expect(
+      isOutOfGasError(
+        Object.assign(new Error("execution reverted"), { details: "gas required exceeds allowance (21000)" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores unrelated errors", () => {
+    expect(isOutOfGasError(new Error("InsufficientBalance()"))).toBe(false);
+    expect(isOutOfGasError("user rejected the request")).toBe(false);
   });
 });
 

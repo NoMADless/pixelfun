@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "assets": "tsx scripts/generate-assets.ts",
     "check:abi": "tsx scripts/check-abi.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "e2e:local": "tsx scripts/local-e2e/index.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.4",

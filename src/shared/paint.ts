@@ -3,6 +3,44 @@ export interface PaintBatch {
   colors: number[];
 }
 
+/** 20% buffer used for the explicit gas limit on paint transactions. */
+export const GAS_BUFFER_NUMERATOR = 120n;
+export const GAS_BUFFER_DENOMINATOR = 100n;
+
+/**
+ * Paint writes 100 storage slots, so a node's estimate can be close to the
+ * actual cost. Send an explicit limit with 20% headroom (rounded up).
+ */
+export function gasLimitWithBuffer(
+  estimate: bigint,
+  numerator = GAS_BUFFER_NUMERATOR,
+  denominator = GAS_BUFFER_DENOMINATOR,
+): bigint {
+  if (estimate <= 0n) throw new RangeError("gas estimate must be positive.");
+  if (numerator <= 0n || denominator <= 0n) {
+    throw new RangeError("gas buffer must be positive.");
+  }
+  return (estimate * numerator + denominator - 1n) / denominator;
+}
+
+/** Detect the common node/wallet out-of-gas errors for a clear UI message. */
+export function isOutOfGasError(error: unknown): boolean {
+  const message = (
+    error instanceof Error
+      ? `${error.message} ${(error as Error & { details?: string }).details ?? ""} ${
+          (error as Error & { shortMessage?: string }).shortMessage ?? ""
+        }`
+      : String(error)
+  ).toLowerCase();
+  return [
+    "out of gas",
+    "intrinsic gas too low",
+    "gas required exceeds allowance",
+    "exceeds block gas limit",
+    "gas limit reached",
+  ].some((needle) => message.includes(needle));
+}
+
 /**
  * Cost of a paint in the token's smallest unit. The contract charges PRICE per
  * pixel, and the full amount is burned at paint time.

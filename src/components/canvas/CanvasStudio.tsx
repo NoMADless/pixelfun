@@ -35,7 +35,13 @@ import {
   paletteIndexFromByte,
 } from "@/shared/palette";
 import { CANVAS_PIXEL_COUNT } from "@/shared/canvas";
-import { batchCount, paintCost, splitPaintBatches } from "@/shared/paint";
+import {
+  batchCount,
+  gasLimitWithBuffer,
+  isOutOfGasError,
+  paintCost,
+  splitPaintBatches,
+} from "@/shared/paint";
 import { MOCK_DECIMALS, MOCK_PRICE_RAW } from "@/shared/mock";
 
 interface PaintState {
@@ -258,7 +264,24 @@ export function CanvasStudio() {
             step: splitCount > 1 ? `Paint tx ${txNumber}/${splitCount}…` : "Paint tx…",
             hashes: [...hashes],
           });
-          const hash = await writeContractAsync(paintCall(batch.ids, batch.colors));
+          const call = paintCall(batch.ids, batch.colors);
+          // Paint writes up to 100 cold slots. Estimate the batch, add 20% and
+          // send an explicit limit instead of relying on a wallet default.
+          let gas: bigint | undefined;
+          try {
+            const estimate = await publicClient.estimateContractGas({
+              ...call,
+              account: address,
+            });
+            gas = gasLimitWithBuffer(estimate);
+          } catch {
+            // A failing estimate is reported by the write; let it surface.
+            gas = undefined;
+          }
+          const hash = await writeContractAsync({
+            ...call,
+            ...(gas !== undefined ? { gas } : {}),
+          });
           hashes.push(hash);
           setPaintState({
             busy: true,
@@ -287,7 +310,13 @@ export function CanvasStudio() {
         void canvas.refreshAfterPaint();
       }
     } catch (error) {
-      notify("error", "Paint failed", getErrorMessage(error));
+      notify(
+        "error",
+        "Paint failed",
+        isOutOfGasError(error)
+          ? "The transaction ran out of gas. Nothing was charged — split the draft into smaller batches and try again."
+          : getErrorMessage(error),
+      );
       setPaintState((previous) => ({ ...previous, busy: false, step: null }));
       if (hashes.length > 0) void canvas.refreshAfterPaint();
     }
