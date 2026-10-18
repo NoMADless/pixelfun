@@ -365,9 +365,9 @@ pass. Painting had not started, so epoch 0 was still open.
   (45 entries, zero diff from commit `e880bd5`).
 - [x] `npm run smoke` — 11/11 against the live vault.
 - [x] `npm run e2e:local` and `npm run e2e:fork` — 302/302 and 121/121.
-- [ ] Real demo transactions (approve → deposit → paint → withdraw) and the
+- [x] Real demo transactions (approve → deposit → paint → withdraw) and the
   resulting hashes in `demoTxUrls`.
-- [ ] The IMD owner's written reassurance that the vault, `0x…dEaD` and
+- [x] The IMD owner's written reassurance that the vault, `0x…dEaD` and
   participants will not be blocklisted ([FORK_TEST.md](FORK_TEST.md)).
 
 Re-run the three commands below before every production deploy:
