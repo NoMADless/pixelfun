@@ -63,8 +63,8 @@ data, not launch proof.
 | `MOCK_MODE` | no | `true` runs the in-memory demo; `false` reads the chain |
 | `NEXT_PUBLIC_CHAIN_ID` | no | Defaults to `4663` (Robinhood Chain) |
 | `NEXT_PUBLIC_RPC_URL` | no | Defaults to the public Robinhood Chain RPC |
-| `NEXT_PUBLIC_EXPLORER_URL` | no | Defaults to the Robinhood Chain Blockscout |
-| `NEXT_PUBLIC_VAULT_ADDRESS` | real mode | PixelFunVault address |
+| `NEXT_PUBLIC_EXPLORER_URL` | no | Defaults to `https://robin.etherscan.io` |
+| `NEXT_PUBLIC_VAULT_ADDRESS` | real mode | PixelFunVault address (`0x30da…9009` in production) |
 | `NEXT_PUBLIC_IMD_ADDRESS` | real mode | IMD ERC-20 address |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | no | Enables the WalletConnect connector |
 | `NEXT_PUBLIC_SITE_URL` | no | Public origin for canonical/OG/share links; defaults to `https://pixelfun.xyz` |
@@ -74,6 +74,8 @@ data, not launch proof.
 | `NEXT_PUBLIC_LOCAL_DEV` | no | DEV ONLY. `true` adds an Anvil test connector; requires chain 31337 |
 | `ROBINHOOD_RPC_URL` | fork test | RPC for `npm run e2e:fork`; the suite skips when unset |
 | `IMD_HOLDER` | no | Optional funded EOA to impersonate in `e2e:fork` |
+| `PIXELFUN_DEPLOY_TX` | bytecode check | Deploy tx hash for `npm run check:bytecode` |
+| `PIXELFUN_CONTRACT_REPO` | bytecode check | Contract checkout with `out/PixelFun.sol/PixelFun.json`; defaults to `../launch-2148-dsa` |
 
 `/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
 need public values. There are no secrets in this stage.
@@ -84,14 +86,31 @@ need public values. There are no secrets in this stage.
 MOCK_MODE=false
 NEXT_PUBLIC_CHAIN_ID=4663
 NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.chain.robinhood.com
-NEXT_PUBLIC_EXPLORER_URL=https://robinhoodchain.blockscout.com
-NEXT_PUBLIC_VAULT_ADDRESS=0x...
-NEXT_PUBLIC_IMD_ADDRESS=0x...
+NEXT_PUBLIC_EXPLORER_URL=https://robin.etherscan.io
+NEXT_PUBLIC_VAULT_ADDRESS=0x30da521f63553ec3ea2dbb82c30581c00ccf9009
+NEXT_PUBLIC_IMD_ADDRESS=0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127
 CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_SITE_URL=https://your-domain.example
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=... # optional
 ```
+
+### Live deployment (Robinhood Chain)
+
+| | |
+| --- | --- |
+| Vault | `0x30da521f63553ec3ea2dbb82c30581c00ccf9009` ([explorer](https://robin.etherscan.io/address/0x30da521f63553ec3ea2dbb82c30581c00ccf9009)) |
+| Deploy tx | `0xd7c0e30bc98b22a71eff1aa35df2362f131a295cbc981c764c74fc0511b72523` ([explorer](https://robin.etherscan.io/tx/0xd7c0e30bc98b22a71eff1aa35df2362f131a295cbc981c764c74fc0511b72523)), block 91,565,987 |
+| IMD | `0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127` ([token](https://robin.etherscan.io/token/0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127)) |
+| Constructor args | `imd = 0x5F7B…7127`, `minPixels = 20` |
+| Source commit | [`e880bd5`](https://github.com/identity-md-launches/launch-2148-dsa/commit/e880bd5931c48ca32e7de751471a4506bd25e6e4), solc 0.8.26, optimizer 200 |
+| Epoch 0 | starts `2026-10-18T06:38:40Z`, ends `2026-10-21T06:38:40Z` (EPOCH_START 1792305520) |
+
+`npm run check:bytecode` matched the live runtime (6,921 bytes, immutables
+masked) and the creation code inside the deploy factory calldata, so
+`deployedUnchanged` is `true` on `/proof`. `npm run smoke` passes 11/11 against
+the live vault: `imd()`, `MIN_PIXELS = 20`, `PRICE = 0.005 IMD`, empty epoch-0
+board, `totalPixelsPainted = 0`, and an all-zero canvas chunk.
 
 The app shows a “contract not deployed yet” screen until both addresses are
 provided. The PixelFun vault has no admin/owner/pause UI. IMD itself is an
@@ -115,7 +134,7 @@ Verified before hardcoding:
 | --- | --- |
 | Chain ID | `4663` (`0x1237`; confirmed live via `eth_chainId`) |
 | RPC | `https://rpc.mainnet.chain.robinhood.com` |
-| Explorer | `https://robinhoodchain.blockscout.com` (HTTP 200) |
+| Explorer | `https://robin.etherscan.io` (address, tx and token pages return 200; Blockscout also mirrors the chain) |
 | Native gas token | ETH |
 
 Official sources: [docs.robinhood.com/chain/connecting](https://docs.robinhood.com/chain/connecting/),
@@ -301,12 +320,13 @@ board. This connector is for local verification only; leave
 
 ## Proof page
 
-`src/config/proof.ts` already records `imdLaunchNumber = 2148` and the
-`launch-2148-dsa` repo URL. The contract address, verified explorer URL, audit,
-X account, demo transactions and `deployedUnchanged` stay empty/false until they
-are confirmed; `/proof` shows “not yet confirmed” for bytecode rather than
-claiming a match. Empty fields are hidden. The page also shows live total-painted,
-burned and current-round values.
+`src/config/proof.ts` records the live deployment: vault address, explorer link,
+deploy tx and block, source commit, constructor args, compiler settings,
+attestation and manifest hashes, launch number 2148 and the seven IMD verification
+gates. `deployedUnchanged` is `true` because `npm run check:bytecode` matched both
+the runtime bytecode and the creation code. The wording is “IMD verification gates
+passed” — IMD's verifier is not a third-party audit. Empty fields are hidden, and
+the page still shows live total-painted, dead-address and current-round values.
 
 ## Commands
 
@@ -317,55 +337,63 @@ npm run lint       # eslint
 npm test           # vitest unit tests
 npm run build      # production build
 npm run start      # serve the production build
-npm run check:abi  # compare ABI requirements with the committed ABIs
-npm run smoke      # read a deployed vault and print pass/fail
+npm run check:abi       # compare ABI requirements with the committed ABIs
+npm run check:bytecode  # compare live runtime + creation code with the build
+npm run smoke           # read the live vault and print pass/fail
 npm run e2e:local  # full local Anvil suite against the real contract
 npm run e2e:fork   # real IMD fork suite (needs ROBINHOOD_RPC_URL)
 npm run assets     # regenerate OG image, favicons from the pixel-art script
 ```
 
 `npm run smoke` needs `MOCK_MODE=false`, `NEXT_PUBLIC_VAULT_ADDRESS`,
-`NEXT_PUBLIC_IMD_ADDRESS` and an RPC. It reads `PRICE`, `WIDTH`, `HEIGHT`,
-`MIN_PIXELS`, `EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one `getPixels`
-chunk and `getBoard(currentEpoch)`, then prints a pass/fail summary. It is read-only
-and never sends a transaction.
+`NEXT_PUBLIC_IMD_ADDRESS` and an RPC. It compares `imd()`, `MIN_PIXELS = 20` and
+`PRICE = 0.005 IMD`, confirms epoch 0's board and `totalPixelsPainted` are empty,
+reads one all-zero `getPixels` chunk, and prints `EPOCH_START` with the epoch-0
+window. It is read-only and never sends a transaction.
 
-## Go live after IMD deploys
+## Verify the live deployment
 
-These are the exact steps once IMD publishes the vault address. Until then the
-app stays in mock mode or shows the explicit not-deployed screen.
+Status: the vault is deployed and the read-only checks pass. Painting has not
+started, so epoch 0 is still open.
 
-0. **Re-run the real-token fork suite.** Set `ROBINHOOD_RPC_URL` and run
-   `npm run e2e:fork`. It must pass 121/121 before you rely on the vault. Read
-   [FORK_TEST.md](FORK_TEST.md) and disclose the IMD owner's blocklist power.
-1. **Swap in the deployed values.** Set `NEXT_PUBLIC_CHAIN_ID=4663`,
-   `NEXT_PUBLIC_RPC_URL` (a dedicated endpoint for public traffic),
-   `NEXT_PUBLIC_EXPLORER_URL`, `NEXT_PUBLIC_VAULT_ADDRESS` and
-   `NEXT_PUBLIC_IMD_ADDRESS`. Leave `CANVAS_CHUNK_SLOTS` at 1024.
-2. **Verify the ABI and bytecode contract.** Run `npm run check:abi`. It must pass
-   33/33 requirements. If the deployed artifact differs, regenerate the ABI from
-   the launch repo and re-run the local e2e suite before touching production.
-3. **Smoke-test the live vault.** With `MOCK_MODE=false` and the real env, run
-   `npm run smoke`. Every line must be `PASS`; it reads `PRICE`, the canvas and the
-   live board without sending a transaction.
-4. **Turn mock mode off** (`MOCK_MODE=false`) and **deploy to Vercel** with the same
-   variables in the build and runtime environments. `NEXT_PUBLIC_*` values are
-   inlined at build time, so redeploy after changing any of them.
-5. **Make the demo transactions** from [DEMO.md](DEMO.md): approve, deposit, paint
-   (record hashes) and confirm the leaderboard/rank. Keep the wallet funded only
-   with what the demo needs.
-6. **Fill [proof.ts](src/config/proof.ts)**: contract address, verified explorer
-   URL, audit report, demo transaction URLs and X account. Set
-   `deployedUnchanged: true` only after comparing the deployed runtime bytecode
-   with the audited build. Launch number 2148 and the repo URL are already set.
-7. **Final checks**: `npm run typecheck`, `npm run lint`, `npm test`,
-   `npm run check:abi`, `npm run build`, then open `/`, `/leaderboard`,
-   `/about` and `/proof` at mobile and desktop widths in both themes.
+- [x] `npm run check:bytecode` — 10/10: runtime 6,921 bytes matches with immutables
+  masked; creation code found in the deploy calldata; args `IMD, 20`.
+- [x] `npm run check:abi` — 33/33 requirements against the regenerated ABI
+  (45 entries, zero diff from commit `e880bd5`).
+- [x] `npm run smoke` — 11/11 against the live vault.
+- [x] `npm run e2e:local` and `npm run e2e:fork` — 302/302 and 121/121.
+- [ ] Real demo transactions (approve → deposit → paint → withdraw) and the
+  resulting hashes in `demoTxUrls`.
+- [ ] The IMD owner's written reassurance that the vault, `0x…dEaD` and
+  participants will not be blocklisted ([FORK_TEST.md](FORK_TEST.md)).
+
+Re-run the three commands below before every production deploy:
+
+```bash
+npm run check:bytecode   # needs PIXELFUN_DEPLOY_TX
+npm run check:abi
+npm run smoke
+```
 
 ## Deploy to Vercel
 
 1. Push the repository and import it into Vercel.
-2. Add the env vars from `.env.example` (Project → Settings → Environment Variables).
+2. Add these env vars (Project → Settings → Environment Variables), then redeploy:
+
+```dotenv
+MOCK_MODE=false
+NEXT_PUBLIC_CHAIN_ID=4663
+NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.chain.robinhood.com
+NEXT_PUBLIC_EXPLORER_URL=https://robin.etherscan.io
+NEXT_PUBLIC_VAULT_ADDRESS=0x30da521f63553ec3ea2dbb82c30581c00ccf9009
+NEXT_PUBLIC_IMD_ADDRESS=0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127
+CANVAS_CHUNK_SLOTS=1024
+NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
+NEXT_PUBLIC_SITE_URL=https://your-domain.example
+# optional
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+```
+
    `NEXT_PUBLIC_*` values are inlined at build time; redeploy after changing them.
    `MOCK_MODE` is read when pages are built and by the API at request time, so set
    it before the build and keep it consistent across build and runtime.

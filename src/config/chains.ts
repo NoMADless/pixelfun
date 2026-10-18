@@ -3,14 +3,15 @@ import { defineChain, isAddress, type Address } from "viem";
 /**
  * Robinhood Chain mainnet.
  * Verified 2026-10-18: official docs list chain ID 4663 with
- * https://rpc.mainnet.chain.robinhood.com and robinhoodchain.blockscout.com.
- * The live RPC returns eth_chainId 0x1237 (4663).
+ * https://rpc.mainnet.chain.robinhood.com. The live RPC returns eth_chainId
+ * 0x1237 (4663). The deployed vault is published on robin.etherscan.io, so that
+ * is the default explorer; Blockscout is kept as a documented alternative.
  * Sources: docs.robinhood.com/chain/connecting and
  * robinhood.com/us/en/support/articles/robinhood-chain-mainnet
  */
 export const DEFAULT_CHAIN_ID = 4663;
 export const DEFAULT_RPC_URL = "https://rpc.mainnet.chain.robinhood.com";
-export const DEFAULT_EXPLORER_URL = "https://robinhoodchain.blockscout.com";
+export const DEFAULT_EXPLORER_URL = "https://robin.etherscan.io";
 
 /*
  * Read NEXT_PUBLIC_* values with literal property access. Next inlines them at

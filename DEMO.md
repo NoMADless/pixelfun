@@ -1,8 +1,9 @@
 # PixelFun demo and go-live checklist
 
-Use this after IMD deploys `PixelFun` (launch `2148`) and the vault address is
-published. Record every demo transaction hash; they become the public proof on
-`/proof`.
+IMD has deployed `PixelFun` (launch `2148`): vault
+`0x30da521f63553ec3ea2dbb82c30581c00ccf9009`, deploy tx `0xd7c0e30b…b72523` at
+block 91,565,987. Record every demo transaction hash; they become the public
+proof on `/proof`.
 
 ## 0. Configure and verify before launch
 
@@ -10,9 +11,10 @@ published. Record every demo transaction hash; they become the public proof on
 MOCK_MODE=false
 NEXT_PUBLIC_CHAIN_ID=4663
 NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.chain.robinhood.com
-NEXT_PUBLIC_EXPLORER_URL=https://robinhoodchain.blockscout.com
-NEXT_PUBLIC_VAULT_ADDRESS=0x...
-NEXT_PUBLIC_IMD_ADDRESS=0x...
+NEXT_PUBLIC_EXPLORER_URL=https://robin.etherscan.io
+NEXT_PUBLIC_VAULT_ADDRESS=0x30da521f63553ec3ea2dbb82c30581c00ccf9009
+NEXT_PUBLIC_IMD_ADDRESS=0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127
+PIXELFUN_DEPLOY_TX=0xd7c0e30bc98b22a71eff1aa35df2362f131a295cbc981c764c74fc0511b72523
 CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_SITE_URL=https://your-domain.example
 ```
@@ -23,6 +25,7 @@ against the same compiled artifact and ABI:
 ```bash
 ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com npm run e2e:fork
 (cd ../launch-2148-dsa && forge build)
+npm run check:bytecode
 npm run check:abi
 npm run e2e:local
 npm test
@@ -43,11 +46,13 @@ npm run smoke
 npm run build
 ```
 
-`check:abi` must pass 33/33 requirements. `e2e:fork` must end in
-`121/121 checks passed`; `e2e:local` must end in `302/302 checks passed`. `smoke`
-must print all `PASS` lines for `PRICE`, `WIDTH`, `HEIGHT`, `MIN_PIXELS`,
-`EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one `getPixels` chunk and
-`getBoard(currentEpoch)`.
+`check:bytecode` must match the 6,921-byte runtime with immutables masked and find
+the creation code in the deploy calldata. `check:abi` must pass 33/33
+requirements. `e2e:fork` must end in `121/121 checks passed`; `e2e:local` must end
+in `302/302 checks passed`. `smoke` must print all `PASS` lines for `imd()`,
+`MIN_PIXELS = 20`, `PRICE = 0.005 IMD`, `WIDTH`/`HEIGHT`, `EPOCH_START`,
+`currentEpoch = 0`, an empty epoch-0 board, `totalPixelsPainted = 0` and an
+all-zero `getPixels` chunk.
 
 ## 0b. Deploy the website
 
@@ -111,25 +116,24 @@ Fill the fields you actually have in `src/config/proof.ts`:
 
 ```ts
 export const PROOF: ProofConfig = {
-  contractAddress: "0x...",
-  explorerUrl: "https://robinhoodchain.blockscout.com/address/0x...?tab=contract",
-  imdLaunchNumber: 2148, // already set
+  contractAddress: "0x30da521f63553ec3ea2dbb82c30581c00ccf9009",
+  explorerUrl: "https://robin.etherscan.io/address/0x30da521f63553ec3ea2dbb82c30581c00ccf9009#code",
+  deployTxHash: "0xd7c0e30bc98b22a71eff1aa35df2362f131a295cbc981c764c74fc0511b72523",
+  deployBlock: 91565987,
+  imdLaunchNumber: 2148,
   imdJobUrl: "https://...",
-  auditReportUrl: "https://...",
-  deployedUnchanged: true, // only after bytecode comparison
-  demoTxUrls: [
-    "https://robinhoodchain.blockscout.com/tx/0x...", // approval (optional)
-    "https://robinhoodchain.blockscout.com/tx/0x...", // deposit
-    "https://robinhoodchain.blockscout.com/tx/0x...", // paint
-  ],
+  auditReportUrl: undefined, // IMD's verifier is not a third-party audit
+  deployedUnchanged: true, // check:bytecode matched runtime and creation code
+  demoTxUrls: [], // add approval, deposit and paint after the demo
   xAccountUrl: "https://x.com/...",
-  repoUrl: "https://github.com/identity-md-launches/launch-2148-dsa", // already set
 };
 ```
 
-Only set `deployedUnchanged: true` after comparing the deployed bytecode with the
-audited build. Until then `/proof` says the match is not yet confirmed. Empty
-fields are hidden on `/proof`; leave unknown values out rather than guessing.
+`deployedUnchanged` is already `true`: `npm run check:bytecode` matched the live
+runtime with immutables masked and found the creation code in the deploy
+calldata. Empty fields are hidden on `/proof`; leave unknown values out rather
+than guessing, and never describe the IMD verification gates as a third-party
+audit.
 
 ## 6. Final verification
 
@@ -138,6 +142,7 @@ npm run typecheck
 npm run lint
 npm test
 npm run check:abi
+npm run check:bytecode
 npm run build
 ```
 
