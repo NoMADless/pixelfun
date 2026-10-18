@@ -67,7 +67,7 @@ data, not launch proof.
 | `NEXT_PUBLIC_VAULT_ADDRESS` | real mode | PixelFunVault address (`0x30da…9009` in production) |
 | `NEXT_PUBLIC_IMD_ADDRESS` | real mode | IMD ERC-20 address |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | no | Enables the WalletConnect connector |
-| `NEXT_PUBLIC_SITE_URL` | no | Public origin for canonical/OG/share links; defaults to `https://pixelfun.xyz` |
+| `NEXT_PUBLIC_SITE_URL` | no | Public origin for canonical/OG/Twitter/share links. Falls back to `https://$VERCEL_PROJECT_PRODUCTION_URL`, then `http://localhost:3000` |
 | `CANVAS_CHUNK_SLOTS` | no | Server `getPixels` chunk size; default 1024 slots (contract max) |
 | `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` | no | Browser RPC fallback chunk size; default 1024 |
 | `PIXELFUN_ALLOW_UNDEPLOYED` | no | Set `1` only to run a production server without a vault |
@@ -76,6 +76,10 @@ data, not launch proof.
 | `IMD_HOLDER` | no | Optional funded EOA to impersonate in `e2e:fork` |
 | `PIXELFUN_DEPLOY_TX` | bytecode check | Deploy tx hash for `npm run check:bytecode` |
 | `PIXELFUN_CONTRACT_REPO` | bytecode check | Contract checkout with `out/PixelFun.sol/PixelFun.json`; defaults to `../launch-2148-dsa` |
+
+`VERCEL_PROJECT_PRODUCTION_URL` is a Vercel system variable (host without a protocol);
+the app turns it into `https://<host>`. Set `NEXT_PUBLIC_SITE_URL` only when you use a
+custom domain — there is no hard-coded production domain.
 
 `/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
 need public values. There are no secrets.
@@ -91,7 +95,7 @@ NEXT_PUBLIC_VAULT_ADDRESS=0x30da521f63553ec3ea2dbb82c30581c00ccf9009
 NEXT_PUBLIC_IMD_ADDRESS=0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127
 CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
-NEXT_PUBLIC_SITE_URL=https://your-domain.example
+NEXT_PUBLIC_SITE_URL=https://your-domain.example # optional; Vercel host otherwise
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=... # optional
 ```
 
@@ -388,8 +392,8 @@ NEXT_PUBLIC_VAULT_ADDRESS=0x30da521f63553ec3ea2dbb82c30581c00ccf9009
 NEXT_PUBLIC_IMD_ADDRESS=0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127
 CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
-NEXT_PUBLIC_SITE_URL=https://your-domain.example
-# optional
+# optional: only for a custom domain; the Vercel production host is used otherwise
+# NEXT_PUBLIC_SITE_URL=https://your-domain.example
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
 ```
 

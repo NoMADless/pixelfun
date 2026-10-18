@@ -7,6 +7,7 @@ import {
   robinhoodChain,
 } from "@/config/chains";
 import { localDevConnector } from "@/lib/local-dev-connector";
+import { SITE_URL } from "@/config/site";
 
 const connectors = [
   // Dev-only, chain-31337-only test wallet. The connector module refuses to load
@@ -21,7 +22,7 @@ const connectors = [
           metadata: {
             name: "PixelFun",
             description: "512×512 collaborative pixel canvas on Robinhood Chain",
-            url: "https://pixelfun.xyz",
+            url: SITE_URL,
             icons: [],
           },
         }),

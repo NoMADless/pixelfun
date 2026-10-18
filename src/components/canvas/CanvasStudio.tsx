@@ -83,7 +83,7 @@ function NotDeployedState() {
   );
 }
 
-export function CanvasStudio() {
+export function CanvasStudio({ siteUrl }: { siteUrl: string }) {
   const { mockMode } = useRuntimeConfig();
   const configured = CONTRACTS_CONFIGURED;
   const canvas = useCanvasData();
@@ -110,6 +110,9 @@ export function CanvasStudio() {
     hashes: [],
   });
   const [exporting, setExporting] = useState(false);
+  // SSR renders the resolved origin; the click handler uses the origin actually
+  // being visited, so a share can never point at another domain.
+  const shareHref = shareOnXUrl(SHARE_TEXT, siteUrl);
 
   const notify = useCallback(
     (kind: "success" | "error" | "info", title: string, detail?: string, href?: string) => {
@@ -407,9 +410,18 @@ export function CanvasStudio() {
             {exporting ? "…" : "PNG"}
           </button>
           <a
-            href={shareOnXUrl(SHARE_TEXT)}
+            href={shareHref}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(event) => {
+              if (typeof window === "undefined") return;
+              event.preventDefault();
+              window.open(
+                shareOnXUrl(SHARE_TEXT, window.location.origin),
+                "_blank",
+                "noopener,noreferrer",
+              );
+            }}
             className="pixel-btn h-8 px-2 text-[10px] font-bold"
             aria-label="Share PixelFun on X"
           >

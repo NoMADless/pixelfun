@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: { default: SITE_TITLE, template: `%s · ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  alternates: { canonical: "/" },
+  alternates: { canonical: `${SITE_URL}/` },
   openGraph: {
     type: "website",
     url: SITE_URL,
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/og.png",
+        url: `${SITE_URL}/og.png`,
         width: 1200,
         height: 630,
         alt: "PixelFun pixel-art wordmark on a dark canvas",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/og.png"],
+    images: [`${SITE_URL}/og.png`],
   },
   icons: {
     icon: [{ url: "/favicon.png", type: "image/png", sizes: "64x64" }],
