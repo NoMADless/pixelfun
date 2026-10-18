@@ -1,10 +1,10 @@
-# PixelFun — Stages 1–2 assumptions
+# PixelFun — Stages 1–3 assumptions
 
 ## Stage selection
 
 The original prompt contained the literal placeholder `<STAGE>` rather than a
-number. Since the repository was empty, **Stage 1** was built first, then **Stage 2**
-was run explicitly. Stage 3 is not implemented yet.
+number. Since the repository was empty, **Stage 1** was built first, then Stage 2
+and Stage 3 were run explicitly.
 
 ## Network verification
 
@@ -105,8 +105,8 @@ was run explicitly. Stage 3 is not implemented yet.
 
 ## UI scope
 
-- Stage 2 implements Canvas and Leaderboard. About, Proof, PNG export/share and OG
-  images are still Stage 3.
+- Stages 1–3 implement Canvas, Leaderboard, About and Proof, PNG export, X share,
+  OG/Twitter metadata, favicons, skeletons, empty states and route error boundaries.
 - “Tap or hover shows x, y and the color” is implemented locally from the canvas
   bytes. Last-painter metadata is not shown; the contract reads in the specified
   interface do not include a per-pixel painter lookup beyond the board.
@@ -127,6 +127,39 @@ was run explicitly. Stage 3 is not implemented yet.
   which produced a production hydration mismatch in testing.
 - The stats header is shown on every page and is hidden when neither mock mode nor
   a configured vault is available.
+
+## Stage 3 decisions
+
+- The rank-gap rule treats a board as full when it has at least `BOARD_SIZE`
+  entries. On a full board the target is `max(MIN_PIXELS, lowestCount + 1)`. The
+  extra `+1` is required because the contract rejects ties. A viewer whose rank is
+  inside the top 66 gets a gap of 0.
+- About reads live `PRICE`, token decimals, round length and burned totals from
+  `/api/stats`; the 0.005 IMD copy is only a fallback while the read is loading or
+  the vault is not configured. “330 NFTs = 5 rounds × 66” is product copy, not a
+  contract read.
+- `src/config/proof.ts` starts empty on purpose. No audit, launch number, demo tx
+  or “deployed unchanged” claim is fabricated; `/proof` shows the neutral coming-soon
+  state until a human fills the fields. Mock-mode numbers on `/proof` are labeled
+  demo data.
+- PNG export renders the on-chain canvas bytes at 4× with nearest-neighbour
+  scaling. Draft pixels are excluded so the downloaded image is the canonical
+  canvas, not a private preview. The X intent uses `NEXT_PUBLIC_SITE_URL` (default
+  `https://pixelfun.xyz`).
+- OG image, favicon PNG/ICO and apple-touch icon are generated as static files by
+  `scripts/generate-assets.ts`, so no runtime image service or font fetch is needed.
+- Error boundaries use Next 16's `retry` prop. Each route has a boundary; the root
+  `global-error.tsx` handles a root-layout failure.
+- Environment validation runs in `instrumentation.ts`. A production server throws
+  if `MOCK_MODE=false` and required addresses are missing; development logs the same
+  list and keeps the not-deployed UI. `PIXELFUN_ALLOW_UNDEPLOYED=1` intentionally
+  downgrades the production failure for preview hosting.
+- The `/api/canvas` shared cache is per server instance. It coalesces concurrent
+  reads and serves a 3s snapshot; Vercel's CDN cache is still the outer layer. A
+  multi-instance deployment can perform one read per instance per 3s.
+- Unit tests cover pure logic only. Wallet writes, RPC reads and visual rendering
+  are not unit-tested; they are exercised manually or with the read-only smoke
+  script against a deployed vault.
 
 ## Deployment
 

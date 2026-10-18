@@ -193,6 +193,34 @@ export async function readCurrentEpoch(client = getReadClient()): Promise<bigint
   })) as bigint;
 }
 
+export async function readEpochAnchor(client = getReadClient()): Promise<bigint> {
+  return (await client.readContract({
+    address: requireVault(),
+    abi: VAULT_ABI,
+    functionName: "EPOCH_START",
+  })) as bigint;
+}
+
+export async function readWidth(client = getReadClient()): Promise<number> {
+  return Number(
+    await client.readContract({
+      address: requireVault(),
+      abi: VAULT_ABI,
+      functionName: "WIDTH",
+    }),
+  );
+}
+
+export async function readHeight(client = getReadClient()): Promise<number> {
+  return Number(
+    await client.readContract({
+      address: requireVault(),
+      abi: VAULT_ABI,
+      functionName: "HEIGHT",
+    }),
+  );
+}
+
 export async function readEpochStart(epoch: bigint, client = getReadClient()): Promise<bigint> {
   return (await client.readContract({
     address: requireVault(),
