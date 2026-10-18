@@ -90,6 +90,16 @@ function short(value: bigint | number | string): string {
   return typeof value === "bigint" ? value.toString() : String(value);
 }
 
+/** Log only the host: RPC paths often contain API keys. */
+function rpcLabel(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return "configured RPC";
+  }
+}
+
 class RealImd {
   constructor(
     readonly chain: ChainContext,
@@ -194,7 +204,7 @@ async function main(): Promise<void> {
 
   const token = (process.env.IMD_ADDRESS?.trim() || CONFIG.forkToken) as Address;
   console.log("PixelFun real-token fork test (Anvil fork; no real transactions)");
-  console.log(`rpc: ${rpcUrl}`);
+  console.log(`rpc: ${rpcLabel(rpcUrl)}`);
   console.log(`IMD: ${token}`);
 
   const check = new Checker();

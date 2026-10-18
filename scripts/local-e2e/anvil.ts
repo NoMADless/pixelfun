@@ -84,7 +84,7 @@ export async function startAnvil(options: AnvilOptions = {}): Promise<AnvilHandl
       const actualChainId = await client.getChainId();
       if (actualChainId === chainId) {
         console.log(
-          `anvil listening on ${url} (chain ${actualChainId}${options.forkUrl ? `, forked from ${options.forkUrl}` : ""})`,
+          `anvil listening on ${url} (chain ${actualChainId}${options.forkUrl ? ", forked" : ""})`,
         );
         return {
           url,
