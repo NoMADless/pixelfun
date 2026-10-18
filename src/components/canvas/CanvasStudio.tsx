@@ -314,7 +314,7 @@ export function CanvasStudio() {
         "error",
         "Paint failed",
         isOutOfGasError(error)
-          ? "The transaction ran out of gas. Nothing was charged — split the draft into smaller batches and try again."
+          ? "The transaction ran out of gas and reverted: no pixels were painted, only the network fee was spent. Split the draft into smaller batches and try again."
           : getErrorMessage(error),
       );
       setPaintState((previous) => ({ ...previous, busy: false, step: null }));

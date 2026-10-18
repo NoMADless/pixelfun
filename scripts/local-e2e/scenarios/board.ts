@@ -4,7 +4,6 @@ import {
   fundPainter,
   sameAddress,
   type ChainContext,
-  type Deployment,
   type Wallet,
 } from "../chain";
 import { pixelsToEnterTop } from "../../../src/shared/leaderboard";

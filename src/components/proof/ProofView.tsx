@@ -112,11 +112,16 @@ export function ProofView() {
             ) : null}
             {typeof PROOF.deployedUnchanged === "boolean" ? (
               <ProofRow label="Bytecode">
-                <span className={PROOF.deployedUnchanged ? "text-pfgreen" : "text-accent"}>
-                  {PROOF.deployedUnchanged
-                    ? "Deployed unchanged from the audited build"
-                    : "Deployment differs from the audited build"}
-                </span>
+                {PROOF.deployedUnchanged ? (
+                  <span className="text-pfgreen">
+                    Deployed unchanged from the audited build
+                  </span>
+                ) : (
+                  <span className="text-muted">
+                    Not yet confirmed — this turns green only after the deployed bytecode
+                    is compared with the audited build.
+                  </span>
+                )}
               </ProofRow>
             ) : null}
             {PROOF.xAccountUrl ? (

@@ -1,4 +1,4 @@
-# PixelFun — Stages 1–3 assumptions
+# PixelFun — Stages 1–4 assumptions
 
 ## Stage selection
 
@@ -21,17 +21,25 @@ and Stage 3 were run explicitly.
 
 ## Contract/ABI
 
-- `abi/PixelFunVault.json` is a **placeholder** built from the expected interface.
-  The final swarm ABI wins. All calls go through `src/lib/contract.ts`.
+- `abi/PixelFunVault.json` is now the **real** `abi` array extracted from
+  `out/PixelFun.sol/PixelFun.json` in `identity-md-launches/launch-2148-dsa`
+  (commit `e880bd5`, solc 0.8.26). All calls still go through
+  `src/lib/contract.ts`, and `npm run check:abi` verifies 33 required entries.
+- The real signatures differ from the placeholder: `getPixels(uint256,uint256)`,
+  epoch helpers/constants are `uint256`, `pixelsPaintedIn` returns `uint32`, and
+  `totalBurned`, `totalDeposited`, `BURN_ADDRESS` and `MAX_READ_SLOTS` exist.
 - `paint(ids, colors)` uses **palette indexes 0..31**. Storage uses 1 byte per
   pixel where `0 = unpainted` and `1..32 = palette index + 1`. This follows the
   interface note in the prompt; if the final contract expects storage indexes in
   `paint`, only the adapter/encode path changes.
-- `getPixels(startSlot, slotCount)` is assumed to return exactly
-  `slotCount × 32` bytes. The adapter throws on a length mismatch rather than
-  silently rendering a skewed canvas.
-- `MAX_BATCH` is read from the contract. The UI falls back to 100 only while the
-  read is loading. `PRICE` is read from the contract for cost display.
+- `getPixels(startSlot, slotCount)` returns exactly `slotCount × 32` bytes (verified
+  on Anvil). The adapter throws on a length mismatch rather than silently
+  rendering a skewed canvas. Chunks default to 1024 slots and are clamped to the
+  contract's `MAX_READ_SLOTS` at runtime, so the full canvas is 8 calls.
+- `MAX_BATCH` is read from the contract (`uint256`, converted to a number). The UI
+  falls back to 100 only while the read is loading. `PRICE` is read from the
+  contract for cost display; if it reverts, the app computes
+  `5 * 10^(decimals-3)` from the token's `decimals()`.
 - Token decimals are read from the IMD contract (`decimals()`), never hardcoded for
   real mode. Mock mode uses 18 decimals for its fake token.
 - Stage 2 uses `getBoard`, `epochStart`, `epochEnd`, `epochEnded`, `currentEpoch`,
@@ -87,9 +95,10 @@ and Stage 3 were run explicitly.
 
 ## Canvas loading
 
-- Default chunk size is 512 slots (=16,384 pixels, 16 calls for the whole canvas),
-  concurrency 4, 2 retries. `CANVAS_CHUNK_SLOTS` controls the server route;
-  `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` controls the browser's direct RPC fallback.
+- Default chunk size is 1024 slots (=32,768 pixels, 8 calls for the whole canvas),
+  concurrency 4, 2 retries, clamped to `MAX_READ_SLOTS` read from the contract.
+  `CANVAS_CHUNK_SLOTS` controls the server route; `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS`
+  controls the browser's direct RPC fallback.
 - The initial full read captures the block number **before** reading `getPixels`,
   so a paint that lands during the read is replayed from `Painted` logs instead of
   being skipped. Replaying an already-applied paint is idempotent.
@@ -115,8 +124,9 @@ and Stage 3 were run explicitly.
   prompt's overlap between drag-to-pan and drag-to-paint.
 - A first finger in a two-finger pinch can place one pixel in Draw mode; pinch
   starts on the second pointer. Accepted for this stage.
-- Gas is not estimated client-side; wallet errors and failed/reverted transactions
-  are surfaced in the toast/step UI with explorer links.
+- Each paint batch is estimated with `eth_estimateGas`; the UI adds a 20% buffer
+  and sends an explicit `gas` limit. Out-of-gas errors get a specific message.
+  Other wallet/revert errors are surfaced in the toast/step UI with explorer links.
 - The Paint button stays disabled until `PRICE`, token decimals and the vault
   balance have loaded, so a transaction cannot be sent with an unknown cost.
 - Chain switching is lazy: deposit, withdraw and paint switch to Robinhood Chain
@@ -138,10 +148,11 @@ and Stage 3 were run explicitly.
   `/api/stats`; the 0.005 IMD copy is only a fallback while the read is loading or
   the vault is not configured. “330 NFTs = 5 rounds × 66” is product copy, not a
   contract read.
-- `src/config/proof.ts` starts empty on purpose. No audit, launch number, demo tx
-  or “deployed unchanged” claim is fabricated; `/proof` shows the neutral coming-soon
-  state until a human fills the fields. Mock-mode numbers on `/proof` are labeled
-  demo data.
+- `src/config/proof.ts` records the known launch number `2148` and the
+  `launch-2148-dsa` repo URL. Contract address, explorer, audit, demo tx, X account
+  and `deployedUnchanged` remain unset/false until confirmed; `/proof` says the
+  bytecode match is not yet confirmed rather than claiming one. Mock-mode numbers
+  on `/proof` are labeled demo data.
 - PNG export renders the on-chain canvas bytes at 4× with nearest-neighbour
   scaling. Draft pixels are excluded so the downloaded image is the canonical
   canvas, not a private preview. The X intent uses `NEXT_PUBLIC_SITE_URL` (default
@@ -160,6 +171,40 @@ and Stage 3 were run explicitly.
 - Unit tests cover pure logic only. Wallet writes, RPC reads and visual rendering
   are not unit-tested; they are exercised manually or with the read-only smoke
   script against a deployed vault.
+
+## Stage 4 decisions
+
+- The contract repo is cloned next to this repo (`../launch-2148-dsa`) and its
+  compiled artifact is the source of truth. `forge build` is required before the
+  local e2e suite; `PIXELFUN_CONTRACT_REPO` overrides the path.
+- The local e2e suite deploys the real `PixelFun` plus the contract repo's
+  `CanvasToken` as a mock IMD, funding Anvil's public test accounts only. It runs
+  at 18 and 6 decimals and never touches a real network.
+- `PRICE()` is readable on a fresh deployment (verified for 18/6 decimals). It does
+  revert for a token with fewer than 3 decimals, so the app keeps
+  `priceFromDecimals()` as a tested fallback; for `< 3` decimals the price is shown
+  as unavailable rather than invented.
+- `totalBurned()` is preferred for the burned stat. `totalPixelsPainted × PRICE`
+  remains as a fallback for an RPC that cannot serve the new getter.
+- 100 pixels with a full board measured 2,712,676 gas, under the ~3M threshold, so
+  the default batch stays at the contract's `MAX_BATCH = 100`; there is no 50-pixel
+  default or advanced toggle.
+- `NEXT_PUBLIC_LOCAL_DEV=true` adds a dev connector that signs with the first
+  well-known Anvil private key (a public test key) and forwards other RPC calls to
+  `NEXT_PUBLIC_RPC_URL`. Import throws when the chain id is not 31337; a production
+  build with the flag and chain 4663 was verified to exit 1. It is never enabled in
+  production deployments.
+- `NEXT_PUBLIC_*` values must be read with literal `process.env.NEXT_PUBLIC_X`
+  access. The previous computed lookup silently fell back to mainnet in the browser
+  bundle; this was found and fixed during the local browser check.
+- The browser check used `anvil --chain-id 31337`, the fixture in
+  `scripts/local-e2e/fixture.ts`, and the dev connector. Deposit (approve and
+  deposit), one paint with the gas estimate, full withdraw, live updates from
+  another wallet, leaderboard/countdown, About and `/proof` were exercised against
+  that chain. The fixture's `.env.local` was restored afterwards.
+- `CONTRACT_REVIEW.md` reports findings only; the contract source was not modified.
+  `npm run smoke` still cannot be proven against the real vault because IMD has not
+  deployed it in this environment.
 
 ## Deployment
 

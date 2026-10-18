@@ -25,5 +25,20 @@ export interface ProofConfig {
  * of them empty shows the neutral “launch details coming soon” state.
  */
 export const PROOF: ProofConfig = {
+  imdLaunchNumber: 2148,
+  repoUrl: "https://github.com/identity-md-launches/launch-2148-dsa",
+
+  // TODO: set to true only after comparing the deployed runtime bytecode with
+  // the audited build. Until then /proof says "not yet confirmed".
+  deployedUnchanged: false,
+
+  // TODO: fill after IMD deploys and the explorer verifies the source.
+  contractAddress: undefined,
+  explorerUrl: undefined,
+  auditReportUrl: undefined,
+  xAccountUrl: undefined,
+  imdJobUrl: undefined,
+
+  // TODO: add one deposit, one paint and one board-read transaction after launch.
   demoTxUrls: [],
 };

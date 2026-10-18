@@ -1,9 +1,10 @@
-# PixelFun demo checklist
+# PixelFun demo and go-live checklist
 
-Use this after `PixelFunVault` and the IMD token are live. Record every demo
-transaction hash; they become the public proof on `/proof`.
+Use this after IMD deploys `PixelFun` (launch `2148`) and the vault address is
+published. Record every demo transaction hash; they become the public proof on
+`/proof`.
 
-## 0. Configure
+## 0. Configure and verify before launch
 
 ```bash
 MOCK_MODE=false
@@ -12,22 +13,43 @@ NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.chain.robinhood.com
 NEXT_PUBLIC_EXPLORER_URL=https://robinhoodchain.blockscout.com
 NEXT_PUBLIC_VAULT_ADDRESS=0x...
 NEXT_PUBLIC_IMD_ADDRESS=0x...
+CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_SITE_URL=https://your-domain.example
 ```
 
-Then run the read-only checks before sending anything:
+Before touching the live vault, run the local suite against the same compiled
+artifact and ABI:
 
 ```bash
+(cd ../launch-2148-dsa && forge build)
 npm run check:abi
-npm run typecheck
+npm run e2e:local
 npm test
-npm run build
-npm run smoke
+npm run typecheck
+npm run lint
 ```
 
-`check:abi` must pass against the final ABI. `smoke` must print all `PASS` lines
-for `PRICE`, `WIDTH`, `HEIGHT`, `MIN_PIXELS`, `EPOCH_START`, `currentEpoch`,
-`totalPixelsPainted`, one `getPixels` chunk and `getBoard(currentEpoch)`.
+Then run the read-only live checks before sending anything:
+
+```bash
+npm run smoke
+npm run build
+```
+
+`check:abi` must pass 33/33 requirements. `e2e:local` must end in
+`302/302 checks passed`. `smoke` must print all `PASS` lines for `PRICE`, `WIDTH`,
+`HEIGHT`, `MIN_PIXELS`, `EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one
+`getPixels` chunk and `getBoard(currentEpoch)`.
+
+## 0b. Deploy the website
+
+1. Set `MOCK_MODE=false` and the env above in Vercel for both build and runtime.
+2. Deploy. `NEXT_PUBLIC_*` values are inlined at build time.
+3. Open `/` and confirm the header is not in Demo mode, the canvas renders and
+   the round countdown is live.
+
+Never set `NEXT_PUBLIC_LOCAL_DEV` in production. The build fails if it is set
+with a chain other than 31337.
 
 ## 1. Prepare a demo wallet
 
@@ -80,23 +102,23 @@ Fill the fields you actually have in `src/config/proof.ts`:
 export const PROOF: ProofConfig = {
   contractAddress: "0x...",
   explorerUrl: "https://robinhoodchain.blockscout.com/address/0x...?tab=contract",
-  imdLaunchNumber: "...",
+  imdLaunchNumber: 2148, // already set
   imdJobUrl: "https://...",
   auditReportUrl: "https://...",
-  deployedUnchanged: true,
+  deployedUnchanged: true, // only after bytecode comparison
   demoTxUrls: [
     "https://robinhoodchain.blockscout.com/tx/0x...", // approval (optional)
     "https://robinhoodchain.blockscout.com/tx/0x...", // deposit
     "https://robinhoodchain.blockscout.com/tx/0x...", // paint
   ],
   xAccountUrl: "https://x.com/...",
-  repoUrl: "https://github.com/...",
+  repoUrl: "https://github.com/identity-md-launches/launch-2148-dsa", // already set
 };
 ```
 
 Only set `deployedUnchanged: true` after comparing the deployed bytecode with the
-audited build. Empty fields are hidden on `/proof`; leave unknown values out rather
-than guessing.
+audited build. Until then `/proof` says the match is not yet confirmed. Empty
+fields are hidden on `/proof`; leave unknown values out rather than guessing.
 
 ## 6. Final verification
 
@@ -104,6 +126,7 @@ than guessing.
 npm run typecheck
 npm run lint
 npm test
+npm run check:abi
 npm run build
 ```
 

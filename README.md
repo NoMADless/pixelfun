@@ -1,16 +1,19 @@
-# PixelFun — Stages 1–3
+# PixelFun — Stages 1–4
 
 A fully on-chain 512×512 collaborative pixel canvas on Robinhood Chain.
-Paint any pixel for 0.005 IMD, burned by the vault contract. **No database, no
-indexer, no backend state**: the app reads pixels straight from the contract and
-applies live `Painted` events.
+Paint any pixel for 0.005 IMD; the vault sends the payment to the dead address.
+**No database, no indexer, no backend state**: the app reads pixels straight from
+the contract and applies live `Painted` events.
 
-This repository contains **Stages 1–3**:
+This repository contains **Stages 1–4**:
 
 - Next.js App Router + TypeScript strict + wagmi/viem
 - Robinhood Chain config (chain ID, RPC and explorer verified from official sources)
-- One contract adapter (`src/lib/contract.ts`) driven by `abi/PixelFunVault.json`
-- Canvas loading through `getPixels` in 16 chunks, plus a shared, coalesced `/api/canvas`
+- The **real** `PixelFun` ABI compiled from
+  [identity-md-launches/launch-2148-dsa](https://github.com/identity-md-launches/launch-2148-dsa)
+  (`abi/PixelFunVault.json`), with one adapter in `src/lib/contract.ts`
+- Canvas loading through `getPixels` in 8 chunks of 1024 slots (the contract's
+  `MAX_READ_SLOTS`), plus a shared, coalesced `/api/canvas`
 - Live `Painted` event polling every 4s, full resync every 60s and on focus
 - Polling pauses while the tab is hidden
 - Single-`<canvas>` renderer with pan, wheel/pinch zoom, fit, grid at 8×+
@@ -25,6 +28,9 @@ This repository contains **Stages 1–3**:
 - `MOCK_MODE` with an in-memory canvas, round boards and localStorage fake vault
 - Clear “contract not deployed yet” state when addresses are missing
 - Unit tests, ABI validation, an env validator and a deployed-vault smoke script
+- A repeatable local Anvil end-to-end suite against the real compiled artifact
+- A dev-only Anvil wallet connector for browser checks (chain 31337 only)
+- [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) and measured [GAS.md](GAS.md)
 
 ## Quick start (mock mode, no chain)
 
@@ -60,9 +66,10 @@ data, not launch proof.
 | `NEXT_PUBLIC_IMD_ADDRESS` | real mode | IMD ERC-20 address |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | no | Enables the WalletConnect connector |
 | `NEXT_PUBLIC_SITE_URL` | no | Public origin for canonical/OG/share links; defaults to `https://pixelfun.xyz` |
-| `CANVAS_CHUNK_SLOTS` | no | Server `getPixels` chunk size; default 512 slots |
-| `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` | no | Browser RPC fallback chunk size; default 512 |
+| `CANVAS_CHUNK_SLOTS` | no | Server `getPixels` chunk size; default 1024 slots (contract max) |
+| `NEXT_PUBLIC_CANVAS_CHUNK_SLOTS` | no | Browser RPC fallback chunk size; default 1024 |
 | `PIXELFUN_ALLOW_UNDEPLOYED` | no | Set `1` only to run a production server without a vault |
+| `NEXT_PUBLIC_LOCAL_DEV` | no | DEV ONLY. `true` adds an Anvil test connector; requires chain 31337 |
 
 `/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
 need public values. There are no secrets in this stage.
@@ -76,8 +83,8 @@ NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.chain.robinhood.com
 NEXT_PUBLIC_EXPLORER_URL=https://robinhoodchain.blockscout.com
 NEXT_PUBLIC_VAULT_ADDRESS=0x...
 NEXT_PUBLIC_IMD_ADDRESS=0x...
-CANVAS_CHUNK_SLOTS=512
-NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=512
+CANVAS_CHUNK_SLOTS=1024
+NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_SITE_URL=https://your-domain.example
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=... # optional
 ```
@@ -115,11 +122,13 @@ and explorer.
 ## Canvas without a backend
 
 1. `/api/canvas` reads `getPixels(startSlot, slotCount)` server-side in
-   `CANVAS_CHUNK_SLOTS` chunks (default 512 slots = 16,384 pixels), 16 calls total,
-   concurrency 4, 2 retries. It returns `{ width, height, pixels: base64, lastSync,
-   blockNumber }` with `Cache-Control: public, s-maxage=3, stale-while-revalidate=30`.
-   Requests within a 3s window share one in-memory read, so concurrent visitors do
-   not each trigger a full 16-call sweep.
+   `CANVAS_CHUNK_SLOTS` chunks (default 1024 slots = 32,768 pixels), 8 calls total,
+   concurrency 4, 2 retries. The chunk size is clamped at runtime to the
+   contract's own `MAX_READ_SLOTS` read, so a misconfigured env cannot exceed it.
+   It returns `{ width, height, pixels: base64, lastSync, blockNumber }` with
+   `Cache-Control: public, s-maxage=3, stale-while-revalidate=30`. Requests within
+   a 3s window share one in-memory read, so concurrent visitors do not each
+   trigger a full 8-call sweep.
 2. The browser uses that route. If it fails, it falls back to direct RPC reads.
 3. The client polls `Painted` logs every 4s from the last processed block and applies
    `ids`/`colors` to the local `Uint8Array(262144)`. Polls are skipped while the tab
@@ -130,9 +139,12 @@ and explorer.
 
 ## Leaderboard without an indexer
 
-- `/api/stats` reads `totalPixelsPainted`, `PRICE`, token decimals, `currentEpoch`,
-  epoch start/end/ended, `MIN_PIXELS`, `BOARD_SIZE` and `EPOCH_LENGTH` server-side.
-  Burned total is `totalPixelsPainted × PRICE`. It is cached for 4s at the CDN.
+- `/api/stats` reads `totalPixelsPainted`, `totalBurned`, `PRICE`, token decimals,
+  `currentEpoch`, epoch start/end/ended, `MIN_PIXELS`, `BOARD_SIZE` and
+  `EPOCH_LENGTH` server-side. Burned uses the contract's `totalBurned()` with
+  `totalPixelsPainted × PRICE` as a fallback. `PRICE()` is a view and works before
+  the first transaction; if it reverts, the app computes `5 * 10^(decimals-3)`
+  from `decimals()`. It is cached for 4s at the CDN.
 - `/api/leaderboard?epoch=N` reads `getBoard(N)`, `epochEnded(N)` and `BOARD_SIZE`.
   Ended boards are cached for an hour; the live board for 4s.
 - Adding `viewer=0x…` returns that address's `pixelsPaintedIn`, rank and
@@ -154,12 +166,15 @@ and explorer.
 
 Everything contract-related lives in `src/lib/contract.ts`:
 
-- ABIs: `abi/PixelFunVault.json`, `abi/ERC20.json` (placeholder ERC20 set)
+- ABIs: `abi/PixelFunVault.json` (extracted from the real compiled artifact),
+  `abi/ERC20.json` (approve/balance/allowance/decimals only)
 - addresses and chain from `src/config/chains.ts`
-- chunked `getPixels` reader, log reader, token helpers
+- chunked `getPixels` reader clamped to `MAX_READ_SLOTS`, log reader, token helpers
 - wagmi read configs for decimals, balances, allowance, `PRICE` and `MAX_BATCH`
+  (`MAX_BATCH` is a `uint256`, converted to a number in the hook)
 - epoch reads (`currentEpoch`, start/end/ended, `MIN_PIXELS`, `BOARD_SIZE`, `EPOCH_LENGTH`)
-- board reads (`getBoard`, `pixelsPaintedIn`, `isWhitelisted`, `totalPixelsPainted`)
+- stats reads (`totalPixelsPainted`, `totalBurned`, `totalDeposited`, `BURN_ADDRESS`)
+- board reads (`getBoard`, `pixelsPaintedIn`, `isWhitelisted`)
 - write request builders (`paintCall`, `depositCall`, `withdrawCall`, `approveCall`)
 
 `src/lib/abi-requirements.ts` is the single list of every function and event this
@@ -173,13 +188,97 @@ It prints each required signature and exits non-zero if anything is missing or h
 different inputs/outputs. Adjust only `src/lib/contract.ts` if a name or argument
 type changed.
 
+### Refresh the ABI from the contract repo
+
+```bash
+# next to this repository
+git clone https://github.com/identity-md-launches/launch-2148-dsa ../launch-2148-dsa
+(cd ../launch-2148-dsa && forge build)
+node -e '
+  const fs = require("fs");
+  const a = JSON.parse(fs.readFileSync("../launch-2148-dsa/out/PixelFun.sol/PixelFun.json"));
+  fs.writeFileSync("abi/PixelFunVault.json", JSON.stringify(a.abi, null, 2) + "\n");
+'
+npm run check:abi
+```
+
+The committed ABI is the artifact's `abi` array (45 entries). The local e2e suite
+fails if it ever drifts from the compiled artifact.
+
+## Local end-to-end test (Anvil)
+
+This is the real contract, compiled from the contract repo, on a local chain. It
+does not touch a real network and uses only Anvil's public test mnemonic.
+
+Requirements: [Foundry](https://book.getfoundry.sh/getting-started/installation)
+(`forge` and `anvil` on `PATH`) and a built contract repo at `../launch-2148-dsa`.
+
+```bash
+npm run e2e:local
+```
+
+What it does:
+
+- starts Anvil on a free local port and deploys a mock IMD (the contract repo's
+  `CanvasToken`) plus the real `PixelFun(imd, 20)`
+- runs the suite twice: **18 decimals and 6 decimals**
+- checks `PRICE()` on a fresh deployment (and the 2-decimal `UnsupportedDecimals`
+  edge), approve/deposit, fee-on-transfer deposit crediting, withdraw of only the
+  unspent balance, `totalBurned` and the dead address balance
+- paints ids `[0, 31, 32, 511, 512, 262143]`, reads all 8,192 slots through
+  `getPixels`, and asserts every byte (packing/byte-order check); also `pixelAt`
+  and `BadRange` on oversized chunks
+- decodes `Painted` logs with the app's `PAINTED_EVENT` and replays them through the
+  app's `applyPaint`, comparing byte-for-byte with chain state
+- covers duplicate ids, bad id/color, empty batch, batch > 100, length mismatch,
+  insufficient balance, zero amounts and over-withdraw
+- fills all 66 board slots, then checks equal-count rejection, strictly-greater
+  displacement, earlier-reach tie order, sorted `getBoard`, `isWhitelisted`, and
+  the app's "pixels needed" calculation against real board data
+- travels through an epoch boundary with `evm_increaseTime`/`evm_mine`, checks
+  `currentEpoch`/`epochEnded`, the frozen past board, the empty new board and the
+  CSV export gate
+- measures gas for 1/25/50/100 px on a full board and writes [GAS.md](GAS.md)
+
+Environment overrides: `PIXELFUN_CONTRACT_REPO`, `ANVIL_BIN`, `FORGE_BIN`,
+`E2E_ANVIL_PORT`, `E2E_WRITE_GAS=0` (do not rewrite GAS.md).
+
+`npm run e2e:local` prints `302/302 checks passed` and exits non-zero on the
+first failed check. The measured 100-pixel batch is 2,712,676 gas, below the 3M
+budget, so the UI keeps the contract maximum of 100 pixels per transaction and
+adds a 20% buffer to every `eth_estimateGas` result.
+
+## Local browser check against Anvil
+
+`NEXT_PUBLIC_LOCAL_DEV=true` adds an **Anvil (dev)** connector that signs with the
+first well-known Anvil test key. It is a public test key, not a secret, and it is
+only added to the wallet list when the flag is set. The module throws at import if
+the flag is combined with any `NEXT_PUBLIC_CHAIN_ID` other than `31337`, so a
+production build cannot point it at mainnet (verified: that build exits 1).
+
+```bash
+# terminal 1
+anvil --port 8545 --chain-id 31337
+
+# terminal 2
+npx tsx scripts/local-e2e/fixture.ts   # deploys + seeds, prints env
+# copy the printed env into .env.local, then:
+npm run dev
+```
+
+Open the app, connect **Anvil (dev)**, then paint, deposit and withdraw. The
+fixture funds the dev account, paints recognizable pixels and seeds a three-entry
+board. This connector is for local verification only; leave
+`NEXT_PUBLIC_LOCAL_DEV` unset in production.
+
 ## Proof page
 
-`src/config/proof.ts` holds optional launch-proof fields: contract address, verified
-explorer URL, IMD launch number/job URL, audit report, deployed-unchanged flag,
-demo transaction URLs, X account and repo URL. Empty fields are hidden; when every
-field is empty, `/proof` shows a neutral “launch details coming soon” state. The
-page also shows live total-painted, burned and current-round values.
+`src/config/proof.ts` already records `imdLaunchNumber = 2148` and the
+`launch-2148-dsa` repo URL. The contract address, verified explorer URL, audit,
+X account, demo transactions and `deployedUnchanged` stay empty/false until they
+are confirmed; `/proof` shows “not yet confirmed” for bytecode rather than
+claiming a match. Empty fields are hidden. The page also shows live total-painted,
+burned and current-round values.
 
 ## Commands
 
@@ -192,6 +291,7 @@ npm run build      # production build
 npm run start      # serve the production build
 npm run check:abi  # compare ABI requirements with the committed ABIs
 npm run smoke      # read a deployed vault and print pass/fail
+npm run e2e:local  # full local Anvil suite against the real contract
 npm run assets     # regenerate OG image, favicons from the pixel-art script
 ```
 
@@ -200,6 +300,35 @@ npm run assets     # regenerate OG image, favicons from the pixel-art script
 `MIN_PIXELS`, `EPOCH_START`, `currentEpoch`, `totalPixelsPainted`, one `getPixels`
 chunk and `getBoard(currentEpoch)`, then prints a pass/fail summary. It is read-only
 and never sends a transaction.
+
+## Go live after IMD deploys
+
+These are the exact steps once IMD publishes the vault address. Until then the
+app stays in mock mode or shows the explicit not-deployed screen.
+
+1. **Swap in the deployed values.** Set `NEXT_PUBLIC_CHAIN_ID=4663`,
+   `NEXT_PUBLIC_RPC_URL` (a dedicated endpoint for public traffic),
+   `NEXT_PUBLIC_EXPLORER_URL`, `NEXT_PUBLIC_VAULT_ADDRESS` and
+   `NEXT_PUBLIC_IMD_ADDRESS`. Leave `CANVAS_CHUNK_SLOTS` at 1024.
+2. **Verify the ABI and bytecode contract.** Run `npm run check:abi`. It must pass
+   33/33 requirements. If the deployed artifact differs, regenerate the ABI from
+   the launch repo and re-run the local e2e suite before touching production.
+3. **Smoke-test the live vault.** With `MOCK_MODE=false` and the real env, run
+   `npm run smoke`. Every line must be `PASS`; it reads `PRICE`, the canvas and the
+   live board without sending a transaction.
+4. **Turn mock mode off** (`MOCK_MODE=false`) and **deploy to Vercel** with the same
+   variables in the build and runtime environments. `NEXT_PUBLIC_*` values are
+   inlined at build time, so redeploy after changing any of them.
+5. **Make the demo transactions** from [DEMO.md](DEMO.md): approve, deposit, paint
+   (record hashes) and confirm the leaderboard/rank. Keep the wallet funded only
+   with what the demo needs.
+6. **Fill [proof.ts](src/config/proof.ts)**: contract address, verified explorer
+   URL, audit report, demo transaction URLs and X account. Set
+   `deployedUnchanged: true` only after comparing the deployed runtime bytecode
+   with the audited build. Launch number 2148 and the repo URL are already set.
+7. **Final checks**: `npm run typecheck`, `npm run lint`, `npm test`,
+   `npm run check:abi`, `npm run build`, then open `/`, `/leaderboard`,
+   `/about` and `/proof` at mobile and desktop widths in both themes.
 
 ## Deploy to Vercel
 
@@ -218,8 +347,14 @@ and never sends a transaction.
 
 ## Tests and verification
 
-`npm test` covers pure logic only: paint cost, MAX_BATCH batching, pixel
-pack/unpack, id↔x,y mapping, rank-gap calculation, CSV generation and countdown
-formatting. The app was also checked in a production build at 375px and desktop
-widths in both themes. See [ASSUMPTIONS.md](ASSUMPTIONS.md) for interface
-assumptions and [DEMO.md](DEMO.md) for the post-deploy demo checklist.
+`npm test` covers pure logic: paint cost, MAX_BATCH batching, price fallback,
+gas buffer/out-of-gas detection, pixel pack/unpack, id↔x,y mapping, rank-gap
+calculation, CSV generation and countdown formatting. `npm run e2e:local` covers
+the real contract on Anvil with 302 checks at 18 and 6 decimals. Browser checks
+against a local Anvil deployment covered the canvas render, deposit, paint
+(with gas estimate), withdraw, live `Painted` updates, leaderboard, countdown,
+About and `/proof`.
+
+See [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) for the audit report, [GAS.md](GAS.md)
+for the gas table, [ASSUMPTIONS.md](ASSUMPTIONS.md) for interface assumptions and
+[DEMO.md](DEMO.md) for the go-live/demo checklist.
