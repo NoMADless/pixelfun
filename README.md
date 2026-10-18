@@ -1,11 +1,11 @@
-# PixelFun — Stages 1–4
+# PixelFun — live on Robinhood Chain
 
 A fully on-chain 512×512 collaborative pixel canvas on Robinhood Chain.
 Paint any pixel for 0.005 IMD; the vault sends the payment to the dead address.
 **No database, no indexer, no backend state**: the app reads pixels straight from
 the contract and applies live `Painted` events.
 
-This repository contains **Stages 1–4**:
+What this repository contains:
 
 - Next.js App Router + TypeScript strict + wagmi/viem
 - Robinhood Chain config (chain ID, RPC and explorer verified from official sources)
@@ -39,7 +39,7 @@ This repository contains **Stages 1–4**:
 ```bash
 npm install
 cp .env.example .env.local
-# .env.local already has MOCK_MODE=true
+# The template ships the live deployment; set MOCK_MODE=true for the demo
 npm run dev
 ```
 
@@ -78,7 +78,7 @@ data, not launch proof.
 | `PIXELFUN_CONTRACT_REPO` | bytecode check | Contract checkout with `out/PixelFun.sol/PixelFun.json`; defaults to `../launch-2148-dsa` |
 
 `/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
-need public values. There are no secrets in this stage.
+need public values. There are no secrets.
 
 ## Real mode
 
@@ -128,7 +128,7 @@ production error to a warning when intentionally previewing without a vault.
 
 ## Robinhood Chain parameters
 
-Verified before hardcoding:
+Verified 2026-10-18 against the live chain:
 
 | Field | Value |
 | --- | --- |
@@ -140,9 +140,8 @@ Verified before hardcoding:
 Official sources: [docs.robinhood.com/chain/connecting](https://docs.robinhood.com/chain/connecting/),
 [docs.robinhood.com/chain/add-network-to-wallet](https://docs.robinhood.com/chain/add-network-to-wallet/),
 [robinhood.com support — Robinhood Chain mainnet](https://robinhood.com/us/en/support/articles/robinhood-chain-mainnet/).
-The docs host was not fetchable from the build environment (TLS interception), so
-the values were cross-checked against official search snippets plus the live RPC
-and explorer.
+The docs host returned TLS errors from this build machine, so the values were
+cross-checked against official search snippets plus the live RPC and explorer.
 
 ## Canvas without a backend
 
@@ -203,7 +202,7 @@ Everything contract-related lives in `src/lib/contract.ts`:
 - write request builders (`paintCall`, `depositCall`, `withdrawCall`, `approveCall`)
 
 `src/lib/abi-requirements.ts` is the single list of every function and event this
-app calls. After swapping in the final ABI:
+app calls. After changing the ABI:
 
 ```bash
 npm run check:abi
@@ -353,8 +352,8 @@ window. It is read-only and never sends a transaction.
 
 ## Verify the live deployment
 
-Status: the vault is deployed and the read-only checks pass. Painting has not
-started, so epoch 0 is still open.
+Status at the time of writing: the vault is deployed and the read-only checks
+pass. Painting had not started, so epoch 0 was still open.
 
 - [x] `npm run check:bytecode` — 10/10: runtime 6,921 bytes matches with immutables
   masked; creation code found in the deploy calldata; args `IMD, 20`.
@@ -416,7 +415,7 @@ owner blocklist. Browser checks against a local Anvil deployment covered the can
 render, deposit, paint (with gas estimate), withdraw, live `Painted` updates,
 leaderboard, countdown, About and `/proof`.
 
-See [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) for the audit report,
+See [CONTRACT_REVIEW.md](CONTRACT_REVIEW.md) for the contract review,
 [FORK_TEST.md](FORK_TEST.md) for the real-token evidence, [GAS.md](GAS.md) for the
 gas table, [ASSUMPTIONS.md](ASSUMPTIONS.md) for interface assumptions and
 [DEMO.md](DEMO.md) for the go-live/demo checklist.
