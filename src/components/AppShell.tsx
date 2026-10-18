@@ -12,6 +12,8 @@ import { useRuntimeConfig } from "@/lib/runtime";
 const TABS = [
   { href: "/", label: "Canvas" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/about", label: "About" },
+  { href: "/proof", label: "Proof" },
 ] as const;
 
 function Logo() {
@@ -38,6 +40,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:border-2 focus:border-ink focus:bg-panel focus:px-3 focus:py-2 focus:text-[11px] focus:font-bold"
+      >
+        Skip to content
+      </a>
       <header className="sticky top-0 z-40 border-b-2 border-line bg-bg/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:py-3">
           <Logo />
@@ -80,9 +88,22 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <StatsBar />
       </header>
-      <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+      <main id="main-content" className="flex min-h-0 flex-1 flex-col">
+        {children}
+      </main>
       <footer className="border-t-2 border-line px-3 py-3 text-center text-[10px] text-muted">
-        No database. No indexer. The canvas is read straight from Robinhood Chain.
+        <p>No database. No indexer. The canvas is read straight from Robinhood Chain.</p>
+        <p className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1">
+          <Link href="/about" className="underline underline-offset-2 hover:text-ink">
+            About
+          </Link>
+          <Link href="/proof" className="underline underline-offset-2 hover:text-ink">
+            Proof
+          </Link>
+          <Link href="/leaderboard" className="underline underline-offset-2 hover:text-ink">
+            Leaderboard
+          </Link>
+        </p>
       </footer>
     </>
   );
