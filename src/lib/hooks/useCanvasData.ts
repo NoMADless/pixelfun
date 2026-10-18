@@ -136,6 +136,8 @@ export function useCanvasData() {
     let cancelled = false;
 
     async function poll() {
+      // Do not spend RPC calls while the tab is in the background.
+      if (document.visibilityState !== "visible") return;
       try {
         const latest = await getLatestBlockNumber(client);
         const previous = lastBlockRef.current;

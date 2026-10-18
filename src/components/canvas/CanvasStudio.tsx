@@ -24,6 +24,8 @@ import {
 import { paintCall } from "@/lib/contract";
 import { formatToken, getErrorMessage, timeAgo } from "@/lib/format";
 import { apiPost } from "@/lib/api";
+import { canvasPngBlob, downloadBlob } from "@/lib/export";
+import { SHARE_TEXT, shareOnXUrl } from "@/lib/share";
 import {
   MAX_BATCH_FALLBACK,
   PALETTE,
@@ -33,6 +35,7 @@ import {
   paletteIndexFromByte,
 } from "@/shared/palette";
 import { CANVAS_PIXEL_COUNT } from "@/shared/canvas";
+import { batchCount, paintCost, splitPaintBatches } from "@/shared/paint";
 import { MOCK_DECIMALS, MOCK_PRICE_RAW } from "@/shared/mock";
 
 interface PaintState {
@@ -100,6 +103,7 @@ export function CanvasStudio() {
     step: null,
     hashes: [],
   });
+  const [exporting, setExporting] = useState(false);
 
   const notify = useCallback(
     (kind: "success" | "error" | "info", title: string, detail?: string, href?: string) => {
@@ -163,13 +167,13 @@ export function CanvasStudio() {
   const decimals = mockMode ? MOCK_DECIMALS : vault.decimals;
   const maxBatch = mockMode ? 100 : (vault.maxBatch ?? MAX_BATCH_FALLBACK);
   const draftCount = draft.size;
-  const cost = price !== undefined ? price * BigInt(draftCount) : undefined;
+  const cost = price !== undefined ? paintCost(price, draftCount) : undefined;
   const priceLabel =
     price !== undefined && decimals !== undefined
       ? formatToken(price, decimals, 4)
       : PRICE_DISPLAY;
   const costLabel = cost !== undefined && decimals !== undefined ? formatToken(cost, decimals, 4) : "—";
-  const splitCount = Math.max(1, Math.ceil(draftCount / Math.max(1, maxBatch)));
+  const splitCount = Math.max(1, batchCount(draftCount, Math.max(1, maxBatch)));
   const availableBalance = mockMode ? mockVault.balance : vault.vaultBalance;
   const insufficient =
     availableBalance !== undefined && cost !== undefined && cost > availableBalance;
@@ -246,16 +250,15 @@ export function CanvasStudio() {
           throw new Error("Vault balance is too low. Deposit more IMD first.");
         }
 
-        for (let offset = 0; offset < ids.length; offset += maxBatch) {
-          const chunkIds = ids.slice(offset, offset + maxBatch);
-          const chunkColors = colors.slice(offset, offset + maxBatch);
-          const txNumber = Math.floor(offset / maxBatch) + 1;
+        const batches = splitPaintBatches(ids, colors, maxBatch);
+        for (const [index, batch] of batches.entries()) {
+          const txNumber = index + 1;
           setPaintState({
             busy: true,
             step: splitCount > 1 ? `Paint tx ${txNumber}/${splitCount}…` : "Paint tx…",
             hashes: [...hashes],
           });
-          const hash = await writeContractAsync(paintCall(chunkIds, chunkColors));
+          const hash = await writeContractAsync(paintCall(batch.ids, batch.colors));
           hashes.push(hash);
           setPaintState({
             busy: true,
@@ -267,8 +270,8 @@ export function CanvasStudio() {
           });
           const receipt = await publicClient.waitForTransactionReceipt({ hash });
           if (receipt.status !== "success") throw new Error("Paint transaction reverted.");
-          canvas.applyLocalPixels(chunkIds, chunkColors);
-          removeFromDraft(chunkIds);
+          canvas.applyLocalPixels(batch.ids, batch.colors);
+          removeFromDraft(batch.ids);
           setUndoStack([]);
         }
 
@@ -291,6 +294,24 @@ export function CanvasStudio() {
   }
 
   const pixels = canvas.canvas;
+
+  async function handleExportPng() {
+    if (!pixels) {
+      notify("info", "Canvas still loading", "Wait for the canvas read to finish, then try again.");
+      return;
+    }
+    setExporting(true);
+    try {
+      const blob = await canvasPngBlob(pixels, 4);
+      downloadBlob(blob, "pixelfun-canvas.png");
+      notify("success", "PNG exported", "2048×2048 nearest-neighbour canvas export.");
+    } catch (error) {
+      notify("error", "PNG export failed", getErrorMessage(error));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const inspectedByte = pixels && inspectId !== null ? (pixels[inspectId] ?? 0) : 0;
   const inspectedPalette = paletteIndexFromByte(inspectedByte);
   const draftColor = inspectId !== null ? draft.get(inspectId) : undefined;
@@ -340,12 +361,31 @@ export function CanvasStudio() {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {mockMode && (
             <span className="border-2 border-accent bg-accent/10 px-1.5 py-1 text-[9px] font-bold uppercase text-accent">
               Mock
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => void handleExportPng()}
+            disabled={exporting || !pixels}
+            className="pixel-btn h-8 px-2 text-[10px] font-bold"
+            aria-label="Download the current canvas as a PNG"
+            title="Download the on-chain canvas as a 4× PNG"
+          >
+            {exporting ? "…" : "PNG"}
+          </button>
+          <a
+            href={shareOnXUrl(SHARE_TEXT)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pixel-btn h-8 px-2 text-[10px] font-bold"
+            aria-label="Share PixelFun on X"
+          >
+            Share on X
+          </a>
           <button
             type="button"
             onClick={() => {

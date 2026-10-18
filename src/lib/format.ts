@@ -13,9 +13,10 @@ export function formatToken(
   if (raw === undefined || decimals === undefined) return "—";
   const value = formatUnits(raw, decimals);
   const [whole, fraction = ""] = value.split(".");
-  if (!fraction) return whole;
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (!fraction) return grouped;
   const trimmed = fraction.slice(0, maxFraction).replace(/0+$/, "");
-  return trimmed ? `${whole}.${trimmed}` : whole;
+  return trimmed ? `${grouped}.${trimmed}` : grouped;
 }
 
 export function formatCount(value: bigint | number | undefined): string {

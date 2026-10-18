@@ -24,12 +24,15 @@ export function BoardTable({ board, boardSize, ended, viewer, emptyNote }: Props
   return (
     <div className="max-h-[480px] overflow-y-auto border-2 border-ink bg-panel pf-scroll">
       <table className="w-full border-collapse text-left">
+        <caption className="sr-only">
+          Round leaderboard: rank, painter, pixels and whitelist status.
+        </caption>
         <thead className="sticky top-0 z-10 bg-panel2">
           <tr className="text-[8px] font-bold uppercase tracking-wider text-muted">
-            <th className="w-10 px-2 py-1.5">#</th>
-            <th className="px-2 py-1.5">Painter</th>
-            <th className="w-16 px-2 py-1.5 text-right">Pixels</th>
-            <th className="w-12 px-2 py-1.5 text-center">WL</th>
+            <th scope="col" className="w-10 px-2 py-1.5">#</th>
+            <th scope="col" className="px-2 py-1.5">Painter</th>
+            <th scope="col" className="w-16 px-2 py-1.5 text-right">Pixels</th>
+            <th scope="col" className="w-12 px-2 py-1.5 text-center">WL</th>
           </tr>
         </thead>
         <tbody>
