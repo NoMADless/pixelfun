@@ -6,6 +6,7 @@ import { PROOF } from "@/config/proof";
 import {
   CONTRACTS_CONFIGURED,
   explorerAddressUrl,
+  explorerTxUrl,
 } from "@/config/chains";
 import { useStats } from "@/lib/hooks/useLeaderboard";
 import { formatCount, formatToken } from "@/lib/format";
@@ -45,6 +46,7 @@ export function ProofView() {
   const hasDetails = Boolean(
     PROOF.contractAddress ||
       PROOF.explorerUrl ||
+      PROOF.deployTxHash ||
       PROOF.imdLaunchNumber !== undefined ||
       PROOF.imdJobUrl ||
       PROOF.auditReportUrl ||
@@ -57,6 +59,7 @@ export function ProofView() {
   const contractHref = PROOF.contractAddress
     ? PROOF.explorerUrl || explorerAddressUrl(PROOF.contractAddress)
     : PROOF.explorerUrl;
+  const deployHref = PROOF.deployTxHash ? explorerTxUrl(PROOF.deployTxHash) : undefined;
 
   return (
     <div className="mx-auto w-full max-w-4xl flex-1 px-3 py-4 sm:py-6">
@@ -65,7 +68,8 @@ export function ProofView() {
         <h1 className="pixel-font mt-2 text-lg leading-relaxed sm:text-2xl">PROOF, NOT PROMISES.</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
           The canvas, vault and payments live on Robinhood Chain. This page collects the public
-          proof: contract address, verified source, launch references and demo transactions.
+          proof: contract address, deploy transaction, published source commit, compiler settings
+          and demo transactions.
         </p>
       </header>
 
@@ -92,9 +96,86 @@ export function ProofView() {
                 )}
               </ProofRow>
             ) : null}
+            {PROOF.deployTxHash ? (
+              <ProofRow label="Deploy tx">
+                <span className="flex flex-col gap-1">
+                  {deployHref ? (
+                    <ExternalLink href={deployHref}>
+                      <span className="font-mono">{PROOF.deployTxHash}</span>
+                    </ExternalLink>
+                  ) : (
+                    <span className="font-mono">{PROOF.deployTxHash}</span>
+                  )}
+                  {PROOF.deployBlock !== undefined ? (
+                    <span className="text-muted">block {PROOF.deployBlock.toLocaleString()}</span>
+                  ) : null}
+                </span>
+              </ProofRow>
+            ) : null}
             {PROOF.explorerUrl ? (
-              <ProofRow label="Verified source">
-                <ExternalLink href={PROOF.explorerUrl}>Open verified contract ↗</ExternalLink>
+              <ProofRow label="Contract page">
+                <ExternalLink href={PROOF.explorerUrl}>Open on the explorer ↗</ExternalLink>
+              </ProofRow>
+            ) : null}
+            {PROOF.sourceCommitUrl && PROOF.sourceCommit ? (
+              <ProofRow label="Source commit">
+                <ExternalLink href={PROOF.sourceCommitUrl}>
+                  <span className="font-mono">{PROOF.sourceCommit}</span> ↗
+                </ExternalLink>
+              </ProofRow>
+            ) : null}
+            {PROOF.constructorArgs ? (
+              <ProofRow label="Constructor args">
+                <span className="font-mono">{PROOF.constructorArgs}</span>
+              </ProofRow>
+            ) : null}
+            {PROOF.compiler ? (
+              <ProofRow label="Compiler">
+                <span className="font-mono">{PROOF.compiler}</span>
+              </ProofRow>
+            ) : null}
+            {typeof PROOF.deployedUnchanged === "boolean" ? (
+              <ProofRow label="Bytecode">
+                {PROOF.deployedUnchanged ? (
+                  <span className="text-pfgreen">
+                    Runtime and creation code match the published build
+                  </span>
+                ) : (
+                  <span className="text-muted">
+                    Not yet confirmed — the deployed bytecode has not been matched to the published
+                    build.
+                  </span>
+                )}
+              </ProofRow>
+            ) : null}
+            {PROOF.verificationGates && PROOF.verificationGates.length > 0 ? (
+              <ProofRow label="IMD verification">
+                <span className="flex flex-col gap-1.5">
+                  <span>
+                    {PROOF.verificationGates.length} gates passed
+                    {PROOF.verificationTool ? ` (${PROOF.verificationTool})` : ""}
+                  </span>
+                  <span className="flex flex-wrap gap-1">
+                    {PROOF.verificationGates.map((gate) => (
+                      <span
+                        key={gate}
+                        className="border-2 border-line bg-bg px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-muted"
+                      >
+                        {gate}
+                      </span>
+                    ))}
+                  </span>
+                </span>
+              </ProofRow>
+            ) : null}
+            {PROOF.attestation ? (
+              <ProofRow label="Attestation">
+                <span className="font-mono text-[9px]">{PROOF.attestation}</span>
+              </ProofRow>
+            ) : null}
+            {PROOF.manifest ? (
+              <ProofRow label="Manifest">
+                <span className="font-mono text-[9px]">{PROOF.manifest}</span>
               </ProofRow>
             ) : null}
             {PROOF.imdLaunchNumber !== undefined ? (
@@ -110,20 +191,6 @@ export function ProofView() {
             {PROOF.auditReportUrl ? (
               <ProofRow label="Audit">
                 <ExternalLink href={PROOF.auditReportUrl}>Read the audit report ↗</ExternalLink>
-              </ProofRow>
-            ) : null}
-            {typeof PROOF.deployedUnchanged === "boolean" ? (
-              <ProofRow label="Bytecode">
-                {PROOF.deployedUnchanged ? (
-                  <span className="text-pfgreen">
-                    Deployed unchanged from the audited build
-                  </span>
-                ) : (
-                  <span className="text-muted">
-                    Not yet confirmed — this turns green only after the deployed bytecode
-                    is compared with the audited build.
-                  </span>
-                )}
               </ProofRow>
             ) : null}
             {PROOF.xAccountUrl ? (
@@ -148,6 +215,11 @@ export function ProofView() {
               </ProofRow>
             ) : null}
           </dl>
+          <p className="mt-3 border-t-2 border-line pt-2 text-[8px] leading-relaxed text-muted">
+            The IMD verification gates are checks performed by the token launcher&apos;s own
+            verifier. They are not a third-party audit. The bytecode line is confirmed by
+            comparing the deployed runtime and creation code with the published build.
+          </p>
         </section>
       )}
 
