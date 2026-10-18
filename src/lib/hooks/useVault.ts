@@ -92,7 +92,12 @@ export function useVault(mockMode: boolean) {
     decimals: decimals ?? null,
   });
   const price = mockMode ? MOCK_PRICE_RAW : (resolvedPrice.price ?? undefined);
-  const maxBatch = mockMode ? MOCK_MAX_BATCH : (maxBatchQuery.data as number | undefined);
+  // MAX_BATCH is uint256 on the real contract, so viem returns a bigint.
+  const maxBatch = mockMode
+    ? MOCK_MAX_BATCH
+    : maxBatchQuery.data !== undefined
+      ? Number(maxBatchQuery.data)
+      : undefined;
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries();
