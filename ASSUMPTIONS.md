@@ -259,3 +259,32 @@ and Stage 3 were run explicitly.
   is used.
 - Public env vars contain only contract/RPC/explorer/WalletConnect-project values;
   there are no secrets in this stage.
+
+## Live deployment (2026-10-18)
+
+- The vault address `0x30da521f63553ec3ea2dbb82c30581c00ccf9009`, deploy tx
+  `0xd7c0e30b…b72523`, block 91,565,987, constructor args and commit `e880bd5`
+  come from IMD's launch receipt. The address, deploy tx, constructor args and
+  immutables were re-read from the RPC, not trusted from the receipt.
+- `npm run check:bytecode` masks the 12 immutable references from the build
+  artifact's `immutableReferences` before comparing, and locates the creation
+  code inside the deploy factory calldata rather than assuming a direct
+  `CREATE`. The deploy tx targets factory `0x9c9d2fcb…47265e`, so its receipt
+  has no `contractAddress`; the vault address comes from the receipt.
+- The explorer is `https://robin.etherscan.io`. Address, tx and token pages all
+  returned HTTP 200 and the expected content; the app uses `/address/…`,
+  `/tx/…` and `/token/…` respectively. Etherscan's contract page is
+  JavaScript-rendered and its API requires a key, so **source verification on
+  the explorer was not confirmed**; the site says “contract page” and points at
+  the published commit instead of claiming “verified source”.
+- “IMD verification gates passed” refers to the token launcher's own verifier
+  0.1.0 (seven named gates). It is not a third-party audit, and the UI says so.
+  The deploy calldata carries eight 32-byte artifact hashes; only the seven named
+  gates are shown, because that is what the receipt states.
+- Round timing is derived entirely from the contract: `EPOCH_START = 1792305520`
+  (`2026-10-18T06:38:40Z`), `EPOCH_LENGTH = 259200`, so epoch 0 ends
+  `2026-10-21T06:38:40Z`. The live `/api/stats` response matched those values and
+  `epochEnd - epochStart = 259200`.
+- `npm run check:bytecode` needs `PIXELFUN_DEPLOY_TX` for the creation-code check;
+  without it, that one check is reported as skipped. It reads the artifact from
+  `PIXELFUN_CONTRACT_REPO` (default `../launch-2148-dsa`).

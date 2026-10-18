@@ -4,7 +4,7 @@ import { ProofView } from "@/components/proof/ProofView";
 export const metadata: Metadata = {
   title: "Proof",
   description:
-    "Public launch proof for PixelFun: vault address, verified source, audit and demo transactions, plus live on-chain paint and dead-address payment numbers.",
+    "Public deployment proof for PixelFun: vault address, deploy transaction, published source commit, IMD verification gates and live on-chain paint numbers.",
 };
 
 export default function ProofPage() {

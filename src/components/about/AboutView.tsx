@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { CONTRACTS_CONFIGURED, VAULT_ADDRESS, IMD_ADDRESS, explorerAddressUrl } from "@/config/chains";
+import {
+  CONTRACTS_CONFIGURED,
+  VAULT_ADDRESS,
+  IMD_ADDRESS,
+  explorerAddressUrl,
+  explorerTokenUrl,
+} from "@/config/chains";
 import { useStats } from "@/lib/hooks/useLeaderboard";
 import { formatToken } from "@/lib/format";
 import { useRuntimeConfig } from "@/lib/runtime";
@@ -10,11 +16,19 @@ import { formatDurationSeconds } from "@/shared/time";
 
 const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 
-function AddressLink({ label, address }: { label: string; address: string | null }) {
+function AddressLink({
+  label,
+  address,
+  kind = "address",
+}: {
+  label: string;
+  address: string | null;
+  kind?: "address" | "token";
+}) {
   if (!address) return <span className="text-muted">{label}: configured after deploy</span>;
   return (
     <a
-      href={explorerAddressUrl(address)}
+      href={kind === "token" ? explorerTokenUrl(address) : explorerAddressUrl(address)}
       target="_blank"
       rel="noopener noreferrer"
       className="font-mono underline underline-offset-2 hover:text-accent"
@@ -158,14 +172,14 @@ export function AboutView() {
           <p className="font-bold uppercase tracking-wide text-ink">Verify it yourself</p>
           <p className="mt-1">
             Every number on this site comes from public contract reads. Use the explorer to inspect
-            the verified source, <code className="font-mono">PRICE</code>,{" "}
+            the contract, <code className="font-mono">PRICE</code>,{" "}
             <code className="font-mono">totalPixelsPainted</code>,{" "}
             <code className="font-mono">getBoard</code>, the <code className="font-mono">Painted</code>{" "}
             events and the dead address balance.
           </p>
           <div className="mt-2 flex flex-col gap-1">
             <AddressLink label="Vault" address={VAULT_ADDRESS} />
-            <AddressLink label="IMD" address={IMD_ADDRESS} />
+            <AddressLink label="IMD" address={IMD_ADDRESS} kind="token" />
           </div>
         </div>
       </section>
@@ -210,8 +224,8 @@ export function AboutView() {
               How do I verify it on the explorer?
             </summary>
             <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              Open the vault address on the Robinhood Chain explorer and check the verified source,
-              then read <code className="font-mono">PRICE</code>,{" "}
+              Open the vault address on the Robinhood Chain explorer and compare it with the
+              published source commit, then read <code className="font-mono">PRICE</code>,{" "}
               <code className="font-mono">totalPixelsPainted</code>, and your address with{" "}
               <code className="font-mono">pixelsPaintedIn</code>. The{" "}
               <Link href="/proof" className="underline underline-offset-2 hover:text-accent">

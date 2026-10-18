@@ -5,7 +5,9 @@ import type { ReactNode } from "react";
 import { PROOF } from "@/config/proof";
 import {
   CONTRACTS_CONFIGURED,
+  IMD_ADDRESS,
   explorerAddressUrl,
+  explorerTokenUrl,
   explorerTxUrl,
 } from "@/config/chains";
 import { useStats } from "@/lib/hooks/useLeaderboard";
@@ -77,8 +79,9 @@ export function ProofView() {
         <section className="mt-4 border-2 border-line bg-panel p-6 text-center" aria-live="polite">
           <p className="pixel-font text-[11px] text-muted">LAUNCH DETAILS COMING SOON</p>
           <p className="mx-auto mt-3 max-w-md text-[11px] leading-relaxed text-muted">
-            The contract address, verified source, audit and demo transaction links will appear
-            here once they are published. Until then, nothing on this page is fabricated.
+            The contract address, deploy transaction, source commit and demo transaction links
+            will appear here once they are published. Until then, nothing on this page is
+            fabricated.
           </p>
         </section>
       ) : (
@@ -132,6 +135,13 @@ export function ProofView() {
             {PROOF.compiler ? (
               <ProofRow label="Compiler">
                 <span className="font-mono">{PROOF.compiler}</span>
+              </ProofRow>
+            ) : null}
+            {IMD_ADDRESS ? (
+              <ProofRow label="IMD token">
+                <ExternalLink href={explorerTokenUrl(IMD_ADDRESS)}>
+                  <span className="font-mono">{IMD_ADDRESS}</span>
+                </ExternalLink>
               </ProofRow>
             ) : null}
             {typeof PROOF.deployedUnchanged === "boolean" ? (

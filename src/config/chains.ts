@@ -95,3 +95,8 @@ export function explorerTxUrl(hash: string): string {
 export function explorerAddressUrl(address: string): string {
   return `${EXPLORER_URL}/address/${address}`;
 }
+
+/** ERC-20 page, which is `/token/…` on the published explorer. */
+export function explorerTokenUrl(address: string): string {
+  return `${EXPLORER_URL}/token/${address}`;
+}
