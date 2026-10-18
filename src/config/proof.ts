@@ -1,3 +1,9 @@
+/** One demo transaction: a human label and its explorer link. */
+export interface DemoTx {
+  label: string;
+  url: string;
+}
+
 export interface ProofConfig {
   /** Deployed PixelFunVault address. Linked to the explorer when present. */
   contractAddress?: string;
@@ -31,8 +37,8 @@ export interface ProofConfig {
   auditReportUrl?: string;
   /** True when runtime bytecode and creation code match the published build. */
   deployedUnchanged?: boolean;
-  /** Demo transactions: deposit, paint, board read, etc. */
-  demoTxUrls?: readonly string[];
+  /** Demo transactions: deposit, paint, withdraw, etc. Shown in array order. */
+  demoTxUrls?: readonly DemoTx[];
   /** Official X account. */
   xAccountUrl?: string;
   /** Public source repository. */
@@ -74,5 +80,34 @@ export const PROOF: ProofConfig = {
   imdLaunchNumber: 2148,
   repoUrl: "https://github.com/identity-md-launches/launch-2148-dsa",
   deployedUnchanged: true,
-  demoTxUrls: [],
+  demoTxUrls: [
+    {
+      label: "Deposit 0.05 IMD",
+      url: "https://robin.etherscan.io/tx/0x400b4ab429e47ca69faa8770ec6b8c043e838445a5adab2f362bbeb11e4d23c3",
+    },
+    {
+      label: "Paint 1 px (0.005 IMD to the dead address)",
+      url: "https://robin.etherscan.io/tx/0x1acce07cd2e11467b52b160dd72c091d97ff9f881c83aaf9e38e69f78990fb0f",
+    },
+    {
+      label: "Paint 3 px (0.015 IMD)",
+      url: "https://robin.etherscan.io/tx/0xc6b32e9679088aa11ec5aea44a28fed0c00878b096018e73ee2e6c6e512cace6",
+    },
+    {
+      label: "Withdraw 0.03 IMD",
+      url: "https://robin.etherscan.io/tx/0x6c005fca5fbc562d762953a868ced027459d42489c6f6e51a3dc7295c11ab96b",
+    },
+    {
+      label: "Deposit 0.1221 IMD",
+      url: "https://robin.etherscan.io/tx/0x7600d5cc69dee6f3449bd8b6341ef63d4445eacfccaf45a7d264a2da1d555828",
+    },
+    {
+      label: "Paint 16 px (0.08 IMD)",
+      url: "https://robin.etherscan.io/tx/0x147c9563facad1d647dc725facf965ff157fde1cd49ccc877ee58655bef3e778",
+    },
+    {
+      label: "Withdraw 0.0421 IMD",
+      url: "https://robin.etherscan.io/tx/0x2a31d00ac882e341e2807423e923e7d04697fd6155679ca10c51cb016e1014dc",
+    },
+  ],
 };

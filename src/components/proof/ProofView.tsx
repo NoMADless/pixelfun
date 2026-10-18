@@ -216,9 +216,9 @@ export function ProofView() {
             {PROOF.demoTxUrls && PROOF.demoTxUrls.length > 0 ? (
               <ProofRow label="Demo transactions">
                 <span className="flex flex-col gap-1">
-                  {PROOF.demoTxUrls.map((url, index) => (
-                    <ExternalLink key={url} href={url}>
-                      Demo tx {index + 1} ↗
+                  {PROOF.demoTxUrls.map((tx) => (
+                    <ExternalLink key={tx.url} href={tx.url}>
+                      {tx.label} ↗
                     </ExternalLink>
                   ))}
                 </span>
