@@ -250,9 +250,10 @@ and Stage 3 were run explicitly.
   and API compatibility; user-facing labels explain them.
 - No contract source was modified. The fork suite only deploys the existing
   compiled artifact to a local Anvil fork.
-- The recommendation is a contract-integration **GO** but an announcement
-  **NO-GO** until the IMD owner's blocklist power is disclosed and accepted. That
-  is a product/trust decision, not a code result.
+- The recommendation is a contract-integration **GO**. The announcement hold was
+  the IMD owner's blocklist power: it is now disclosed and accepted, and the owner
+  confirmed in writing that the vault, `0x…dEaD` and participants will not be
+  blocklisted. That was a product/trust decision, not a code result.
 
 ## Deployment
 

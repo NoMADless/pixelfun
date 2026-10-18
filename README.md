@@ -356,8 +356,8 @@ window. It is read-only and never sends a transaction.
 
 ## Verify the live deployment
 
-Status at the time of writing: the vault is deployed and the read-only checks
-pass. Painting had not started, so epoch 0 was still open.
+Status at the time of writing: the vault is deployed, the read-only checks pass,
+and the launch demo has run. Epoch 0 is still open.
 
 - [x] `npm run check:bytecode` — 10/10: runtime 6,921 bytes matches with immutables
   masked; creation code found in the deploy calldata; args `IMD, 20`.
@@ -365,10 +365,12 @@ pass. Painting had not started, so epoch 0 was still open.
   (45 entries, zero diff from commit `e880bd5`).
 - [x] `npm run smoke` — 11/11 against the live vault.
 - [x] `npm run e2e:local` and `npm run e2e:fork` — 302/302 and 121/121.
-- [x] Real demo transactions (approve → deposit → paint → withdraw) and the
-  resulting hashes in `demoTxUrls`.
-- [x] The IMD owner's written reassurance that the vault, `0x…dEaD` and
-  participants will not be blocklisted ([FORK_TEST.md](FORK_TEST.md)).
+- [x] Real demo transactions — two deposits, three paints and two withdrawals,
+  all seven hashes in `demoTxUrls` (labelled, newest last) and linked on `/proof`.
+  The live totals match their sum: 20 px painted and 0.1 IMD sent to `0x…dEaD`.
+- [x] The IMD owner confirmed in writing that the vault, `0x…dEaD` and
+  participants will not be blocklisted. The owner's power itself — and what it
+  can and cannot do — is documented in [FORK_TEST.md](FORK_TEST.md).
 
 Re-run the three commands below before every production deploy:
 
