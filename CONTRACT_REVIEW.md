@@ -5,7 +5,34 @@ Scope: `identity-md-launches/launch-2148-dsa` at commit `e880bd5`
 Read-only review: no contract source was modified, nothing was deployed to a
 real network, and no real keys were used.
 
-Method:
+## Deployed build sync (2026-10-18)
+
+The vault is live on Robinhood Chain at `0x30da521f63553ec3ea2dbb82c30581c00ccf9009`
+(deploy tx `0xd7c0e30b…b72523`, block 91,565,987). The launch receipt says “rebuilt”,
+so the deployed build was checked against this exact commit rather than trusted:
+
+| Check | Result |
+| --- | --- |
+| Contract repo commit | `e880bd5931c48ca32e7de751471a4506bd25e6e4` — the checkout this review was written against |
+| Compiler | solc `0.8.26+commit.8a97fa7a`, optimizer 200 (matches the artifact metadata) |
+| `src/PixelFun.sol` | sha256 `214d00b0bf190836391c6ceae4a912e33060c650a9c5231b1f647292fe0a02c7`; **no logic change** from the reviewed file |
+| ABI | Regenerated from the commit's artifact: 45 entries, **zero diff** against `abi/PixelFunVault.json` |
+| Runtime bytecode | On-chain 6,921 bytes; matches the artifact exactly after masking the 12 immutable references |
+| Immutables | `imd = 0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127`, `MIN_PIXELS = 20`, `EPOCH_START = 1792305520` |
+| Creation code | Exact match inside the deploy factory calldata at byte 324 of the input; constructor args decode to the same IMD and 20 |
+| Factory | `0x9c9d2fcb75c2c132c0ac0c42df3819a42347265e`; the tx targets the factory, so the receipt has no `contractAddress` |
+
+Bytecode was compared by `npm run check:bytecode`, which masks immutable ranges
+from the artifact before comparing and also re-decodes the constructor args from
+the deploy transaction. The factory calldata carries commit `e880bd5`, manifest
+`2ec05740…c416a7` and attestation `d218fc6c…e704ce18`, matching the launch
+receipt. Eight 32-byte artifact hashes follow them; the receipt names seven
+verification gates (provenance, findings, independent review, bytecode, manifest,
+protected invariants, economics), and those are the gates shown on `/proof`.
+
+This sync found **no logic changes**, so the findings below stand unchanged.
+
+## Method
 
 - Read `README.md`, `launch.json`, `foundry.toml` and `src/PixelFun.sol` line by line.
 - `forge test` in the contract repo: **57 tests passed, 0 failed** (including a
