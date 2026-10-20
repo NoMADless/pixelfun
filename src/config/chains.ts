@@ -13,6 +13,16 @@ export const DEFAULT_CHAIN_ID = 4663;
 export const DEFAULT_RPC_URL = "https://rpc.mainnet.chain.robinhood.com";
 export const DEFAULT_EXPLORER_URL = "https://robin.etherscan.io";
 
+/**
+ * Live PixelFun deployment (IMD launch 2148). These are public constants, not
+ * secrets, and they are the defaults because a static export inlines its
+ * configuration at build time: a host that only runs `npm run build` (IPFS,
+ * for example) never gets a chance to supply `NEXT_PUBLIC_*` variables.
+ * Setting the variables still overrides them.
+ */
+export const DEFAULT_VAULT_ADDRESS: Address = "0x30da521f63553ec3ea2dbb82c30581c00ccf9009";
+export const DEFAULT_IMD_ADDRESS: Address = "0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127";
+
 /*
  * Read NEXT_PUBLIC_* values with literal property access. Next inlines them at
  * build time only when written as `process.env.NEXT_PUBLIC_X`; a computed
@@ -48,8 +58,8 @@ function envNumber(value: string | undefined, fallback: number): number {
 export const CHAIN_ID = envNumber(RAW.chainId, DEFAULT_CHAIN_ID);
 export const RPC_URL = envString(RAW.rpcUrl, DEFAULT_RPC_URL);
 export const EXPLORER_URL = envString(RAW.explorerUrl, DEFAULT_EXPLORER_URL);
-export const VAULT_ADDRESS = envAddress(RAW.vaultAddress);
-export const IMD_ADDRESS = envAddress(RAW.imdAddress);
+export const VAULT_ADDRESS = envAddress(RAW.vaultAddress) ?? DEFAULT_VAULT_ADDRESS;
+export const IMD_ADDRESS = envAddress(RAW.imdAddress) ?? DEFAULT_IMD_ADDRESS;
 export const WALLETCONNECT_PROJECT_ID = envString(RAW.walletConnectProjectId, "");
 
 /**

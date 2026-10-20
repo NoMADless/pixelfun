@@ -18,7 +18,12 @@ const TABS = [
 
 function Logo() {
   return (
-    <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="PixelFun home">
+    <Link
+      href="/"
+      prefetch={false}
+      className="flex shrink-0 items-center gap-2"
+      aria-label="PixelFun home"
+    >
       <span className="grid grid-cols-3 gap-[2px]" aria-hidden>
         {["#e43b44", "#f77622", "#fee761", "#63c74d", "#2ce8f5", "#68386c", "#b55088", "#ffffff", "#0099db"].map(
           (color, index) => (
@@ -69,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={`border-2 px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
                     active
@@ -94,13 +100,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <footer className="border-t-2 border-line px-3 py-3 text-center text-[10px] text-muted">
         <p>No database. No indexer. The canvas is read straight from Robinhood Chain.</p>
         <p className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1">
-          <Link href="/about" className="underline underline-offset-2 hover:text-ink">
+          <Link href="/about" prefetch={false} className="underline underline-offset-2 hover:text-ink">
             About
           </Link>
-          <Link href="/proof" className="underline underline-offset-2 hover:text-ink">
+          <Link href="/proof" prefetch={false} className="underline underline-offset-2 hover:text-ink">
             Proof
           </Link>
-          <Link href="/leaderboard" className="underline underline-offset-2 hover:text-ink">
+          <Link
+            href="/leaderboard"
+            prefetch={false}
+            className="underline underline-offset-2 hover:text-ink"
+          >
             Leaderboard
           </Link>
         </p>

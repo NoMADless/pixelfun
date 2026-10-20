@@ -2,44 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CONTRACTS_CONFIGURED } from "@/config/chains";
-import {
-  getLatestBlockNumber,
-  getPaintedLogs,
-  getReadClient,
-  readCanvasFromRpc,
-} from "@/lib/contract";
+import { fetchCanvas } from "@/lib/chain-reads";
+import { getLatestBlockNumber, getPaintedLogs, getReadClient } from "@/lib/contract";
+import { getMockCanvas } from "@/lib/mock-canvas";
 import { useRuntimeConfig } from "@/lib/runtime";
-import { applyPaint, base64ToPixels } from "@/shared/canvas";
+import { applyPaint } from "@/shared/canvas";
 import { CANVAS_PIXEL_COUNT } from "@/shared/palette";
-
-interface CanvasApiResponse {
-  width: number;
-  height: number;
-  pixels: string;
-  lastSync: string;
-  blockNumber: string | null;
-  mock?: boolean;
-}
 
 interface CanvasState {
   canvas: Uint8Array | null;
   loading: boolean;
   error: string | null;
   lastSync: string | null;
-  source: "api" | "rpc" | "mock" | null;
+  source: "rpc" | "mock" | null;
 }
 
-const API_URL = "/api/canvas";
 const FULL_RESYNC_MS = 60_000;
 const EVENT_POLL_MS = 4_000;
-
-function decodeCanvas(payload: CanvasApiResponse): Uint8Array {
-  const bytes = base64ToPixels(payload.pixels);
-  if (bytes.length !== CANVAS_PIXEL_COUNT) {
-    throw new Error(`Canvas API returned ${bytes.length} bytes, expected ${CANVAS_PIXEL_COUNT}.`);
-  }
-  return bytes;
-}
 
 export function useCanvasData() {
   const { mockMode } = useRuntimeConfig();
@@ -71,33 +50,26 @@ export function useCanvasData() {
 
       try {
         let bytes: Uint8Array;
-        let source: CanvasState["source"] = "api";
+        let source: CanvasState["source"] = "rpc";
         let blockNumber: bigint | null = null;
 
-        try {
-          const response = await fetch(API_URL, { cache: "no-store" });
-          if (!response.ok) {
-            let message = `Canvas API failed (${response.status}).`;
-            try {
-              const body = (await response.json()) as { message?: string };
-              if (body.message) message = body.message;
-            } catch {
-              // non-JSON error
-            }
-            throw new Error(message);
+        if (mockMode) {
+          // Copy: the mock store mutates its buffer in place.
+          bytes = new Uint8Array(getMockCanvas().bytes);
+          source = "mock";
+        } else {
+          if (!configured) {
+            throw new Error(
+              "PixelFunVault is not configured. Set NEXT_PUBLIC_VAULT_ADDRESS and NEXT_PUBLIC_IMD_ADDRESS.",
+            );
           }
-          const payload = (await response.json()) as CanvasApiResponse;
-          bytes = decodeCanvas(payload);
-          blockNumber = payload.blockNumber ? BigInt(payload.blockNumber) : null;
-          source = mockMode ? "mock" : "api";
-        } catch (apiError) {
-          if (!configured) throw apiError;
-          // Fall back to direct RPC reads from the browser. Capture the block
-          // before reading so paints during the read are replayed, not skipped.
-          const client = getReadClient();
-          blockNumber = await getLatestBlockNumber(client);
-          bytes = await readCanvasFromRpc({ client, concurrency: 4, retries: 2 });
-          source = "rpc";
+          const read = await fetchCanvas();
+          bytes = read.bytes;
+          blockNumber = read.blockNumber;
+        }
+
+        if (bytes.length !== CANVAS_PIXEL_COUNT) {
+          throw new Error(`Canvas read returned ${bytes.length} bytes, expected ${CANVAS_PIXEL_COUNT}.`);
         }
 
         if (!mountedRef.current) return;

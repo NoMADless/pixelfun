@@ -303,7 +303,7 @@ export function ProofView() {
           </dl>
         )}
         <p className="mt-2 text-[8px] leading-relaxed text-muted">
-          Values are public contract reads served by <code className="font-mono">/api/stats</code>.{" "}
+          Values are public contract reads made straight from this page, in your browser.{" "}
           The IMD figure is <code className="font-mono">totalBurned()</code>: IMD transferred by
           painting to{" "}
           <ExternalLink href={explorerAddressUrl(DEAD_ADDRESS)}>{DEAD_ADDRESS}</ExternalLink>. It is

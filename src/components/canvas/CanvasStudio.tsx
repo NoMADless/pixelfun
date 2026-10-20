@@ -23,7 +23,8 @@ import {
 } from "@/config/chains";
 import { paintCall } from "@/lib/contract";
 import { formatToken, getErrorMessage, timeAgo } from "@/lib/format";
-import { apiPost } from "@/lib/api";
+import { applyMockPaint } from "@/lib/mock-canvas";
+import { recordMockPaint } from "@/lib/mock-leaderboard";
 import { canvasPngBlob, downloadBlob } from "@/lib/export";
 import { SHARE_TEXT, shareOnXUrl } from "@/lib/share";
 import {
@@ -233,11 +234,9 @@ export function CanvasStudio({ siteUrl }: { siteUrl: string }) {
       if (mockMode) {
         mockVault.withdraw(totalCost);
         try {
-          const result = await apiPost<{ txHash: string; burnedRaw: string }>("/api/mock/paint", {
-            ids,
-            colors,
-            painter: address ?? mockVault.account,
-          });
+          const painter = address ?? mockVault.account;
+          const result = applyMockPaint({ ids, colors, painter });
+          recordMockPaint(painter, result.pixelCount);
           canvas.applyLocalPixels(ids, colors);
           clearDraft();
           setPaintState({ busy: false, step: null, hashes: [] });
