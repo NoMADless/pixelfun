@@ -26,8 +26,10 @@ no admin, no pause, no upgrade path.
 | Explorer | <https://robin.etherscan.io/address/0x30da521f63553ec3ea2dbb82c30581c00ccf9009#code> |
 | Deploy tx | <https://robin.etherscan.io/tx/0xd7c0e30bc98b22a71eff1aa35df2362f131a295cbc981c764c74fc0511b72523> |
 | Source (audited commit) | <https://github.com/identity-md-launches/launch-2148-dsa/commit/e880bd5931c48ca32e7de751471a4506bd25e6e4> |
-| App source | this repository |
-| App | <https://pixelfun-beryl.vercel.app/> (also builds to a static `out/` for IPFS) |
+| App source | <https://github.com/NoMADless/pixelfun> |
+| App (IMD / IPFS) | <https://pixelfun-fully-on-chain-pixel-ca.sites.imd.fun> (`ipfs://bafybeidbla63kstj6etc6u7umaklcqnp4hbe5j6o3f2phv65xkkrd3djsy`) |
+| IMD website job | <https://explorer.imd.fun/jobs/f8653699-6793-4b9c-80d2-478a09004dc5?hired=build-website> |
+| App (Mirror) | <https://pixelfun-beryl.vercel.app/> |
 
 ## Verified on-chain state
 
