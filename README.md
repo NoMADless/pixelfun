@@ -12,8 +12,10 @@ What this repository contains:
 - The **real** `PixelFun` ABI compiled from
   [identity-md-launches/launch-2148-dsa](https://github.com/identity-md-launches/launch-2148-dsa)
   (`abi/PixelFunVault.json`), with one adapter in `src/lib/contract.ts`
+- **Static export**: `npm run build` emits `out/` (no Node runtime, no API routes),
+  so the same build runs on Vercel, GitHub Pages or IPFS
 - Canvas loading through `getPixels` in 8 chunks of 1024 slots (the contract's
-  `MAX_READ_SLOTS`), plus a shared, coalesced `/api/canvas`
+  `MAX_READ_SLOTS`), read straight from the public RPC in the browser
 - Live `Painted` event polling every 4s, full resync every 60s and on focus
 - Polling pauses while the tab is hidden
 - Single-`<canvas>` renderer with pan, wheel/pinch zoom, fit, grid at 8×+
@@ -45,16 +47,16 @@ npm run dev
 
 Open <http://localhost:3000>. Mock mode uses:
 
-- a server-memory canvas seeded with pixel art at `/api/canvas`
-- `/api/mock/paint` to persist mock paint actions and update the round board
-- `/api/stats` and `/api/leaderboard?epoch=N` with two completed rounds and a live round
+- an in-browser canvas seeded with pixel art (`src/lib/mock-canvas.ts`)
+- mock paint actions that update the canvas and the round board locally
+- stats and boards with two completed rounds and a live round (`src/lib/mock-leaderboard.ts`)
 - a localStorage vault per address, starting at 50 IMD, with a +100 faucet
 - demo painter `0x000000000000000000000000000000000000dead` when no wallet is connected
 
-Mock state resets when the dev server restarts (canvas and boards) or localStorage
-is cleared (vault). It is not durable and not safe for a multi-instance serverless
-deployment. Mock board counts and the Proof page's live numbers are synthetic demo
-data, not launch proof.
+Mock state resets when the tab reloads (canvas and boards) or localStorage is
+cleared (vault). It is not durable. Because `MOCK_MODE` is read at build time in a
+static export, set it before building. Mock board counts and the Proof page's live
+numbers are synthetic demo data, not launch proof.
 
 ## Environment variables
 
@@ -81,8 +83,11 @@ data, not launch proof.
 the app turns it into `https://<host>`. Set `NEXT_PUBLIC_SITE_URL` only when you use a
 custom domain — there is no hard-coded production domain.
 
-`/api/canvas`, `/api/stats`, `/api/leaderboard` and the browser wallet config only
-need public values. There are no secrets.
+Every value the app reads is public: chain config, the vault and token addresses,
+the RPC URL and the optional WalletConnect project id. There are no secrets and no
+server-side state. If you set no variables at all, the build falls back to the live
+deployment baked into `src/config/chains.ts`, which is what makes a plain
+`npm run build` deployable to a static host.
 
 ## Real mode
 
@@ -149,35 +154,33 @@ cross-checked against official search snippets plus the live RPC and explorer.
 
 ## Canvas without a backend
 
-1. `/api/canvas` reads `getPixels(startSlot, slotCount)` server-side in
-   `CANVAS_CHUNK_SLOTS` chunks (default 1024 slots = 32,768 pixels), 8 calls total,
-   concurrency 4, 2 retries. The chunk size is clamped at runtime to the
-   contract's own `MAX_READ_SLOTS` read, so a misconfigured env cannot exceed it.
-   It returns `{ width, height, pixels: base64, lastSync, blockNumber }` with
-   `Cache-Control: public, s-maxage=3, stale-while-revalidate=30`. Requests within
-   a 3s window share one in-memory read, so concurrent visitors do not each
-   trigger a full 8-call sweep.
-2. The browser uses that route. If it fails, it falls back to direct RPC reads.
-3. The client polls `Painted` logs every 4s from the last processed block and applies
+1. The browser reads `getPixels(startSlot, slotCount)` in `CANVAS_CHUNK_SLOTS`
+   chunks (default 1024 slots = 32,768 pixels), 8 calls total, concurrency 4,
+   2 retries, via `src/lib/chain-reads.ts`. The chunk size is clamped at runtime to
+   the contract's own `MAX_READ_SLOTS`, so a misconfigured env cannot exceed it.
+   The public RPC answers `access-control-allow-origin: *`, which a static host
+   needs. The trade-off is that each visitor makes those 8 calls themselves: there
+   is no server-side cache, because a static export has no server.
+2. The client polls `Painted` logs every 4s from the last processed block and applies
    `ids`/`colors` to the local `Uint8Array(262144)`. Polls are skipped while the tab
    is hidden.
-4. A full resync runs every 60s and whenever the tab becomes visible/focused.
+3. A full resync runs every 60s and whenever the tab becomes visible/focused.
 
-`MOCK_MODE` serves the same API shape from an in-memory canvas.
+`MOCK_MODE` serves the same data shape from an in-memory canvas in the browser.
 
 ## Leaderboard without an indexer
 
-- `/api/stats` reads `totalPixelsPainted`, `totalBurned`, `PRICE`, token decimals,
+- `fetchStats()` reads `totalPixelsPainted`, `totalBurned`, `PRICE`, token decimals,
   `currentEpoch`, epoch start/end/ended, `MIN_PIXELS`, `BOARD_SIZE` and
-  `EPOCH_LENGTH` server-side. Burned uses the contract's `totalBurned()` with
+  `EPOCH_LENGTH` directly in the browser. Burned uses the contract's `totalBurned()` with
   `totalPixelsPainted × PRICE` as a fallback. `PRICE()` is a view and works before
   the first transaction; if it reverts, the app computes `5 * 10^(decimals-3)`
-  from `decimals()`. It is cached for 4s at the CDN.
-- `/api/leaderboard?epoch=N` reads `getBoard(N)`, `epochEnded(N)` and `BOARD_SIZE`.
-  Ended boards are cached for an hour; the live board for 4s.
-- Adding `viewer=0x…` returns that address's `pixelsPaintedIn`, rank and
-  `isWhitelisted`. Those responses are `private, no-store` because they are
-  wallet-specific.
+  from `decimals()`. The query is stale after 4s and refetches every 10s.
+- `fetchBoard(epoch, viewer)` reads `getBoard(N)`, `epochEnded(N)` and `BOARD_SIZE`.
+  Ended boards never refetch; the live board polls every 10s.
+- Passing a viewer address also reads that address's `pixelsPaintedIn` and
+  `isWhitelisted`. Nothing leaves the browser, so there is no cache to leak a
+  wallet-specific response from.
 - The current board and stats poll every 10s only while the tab is visible. Past
   boards load only when expanded, so old rounds never fan out RPC calls on page load.
 - Rank is only readable from the contract for the top `BOARD_SIZE` (66). For an
@@ -399,16 +402,19 @@ NEXT_PUBLIC_CANVAS_CHUNK_SLOTS=1024
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
 ```
 
-   `NEXT_PUBLIC_*` values are inlined at build time; redeploy after changing them.
-   `MOCK_MODE` is read when pages are built and by the API at request time, so set
-   it before the build and keep it consistent across build and runtime.
-3. Deploy. No database, cron or serverless storage is required.
-4. `/api/canvas`, `/api/stats` and `/api/leaderboard` run as Node serverless
-   functions. Viewer-specific leaderboard responses are `private, no-store`; public
-   boards and canvas responses are CDN-cached as described above.
+   `NEXT_PUBLIC_*` values are inlined at build time; rebuild after changing them.
+   `MOCK_MODE` is also read at build time, so set it before building.
+3. Deploy the generated `out/` directory to any static host: `npx serve out`
+   locally, an object store plus CDN, GitHub Pages, or IPFS (the IMD launch flow
+   builds a repository and pins the result). No database, cron, serverless
+   function or storage is required.
+4. The app ships as a static export (`output: "export"` in `next.config.ts`), so
+   there are no route handlers. Every read happens in the browser against the
+   public RPC, which allows cross-origin requests.
 5. The default public RPC may rate-limit under demo traffic. Use a dedicated RPC
-   endpoint in `NEXT_PUBLIC_RPC_URL` for a launch, and keep the server route as the
-   primary canvas reader so visitors do not each fan out 16 RPC calls.
+   endpoint in `NEXT_PUBLIC_RPC_URL` for a launch: each visitor now performs the
+   canvas reads in their own browser, so the traffic arrives at the RPC directly
+   instead of being coalesced by a server.
 
 ## Tests and verification
 
