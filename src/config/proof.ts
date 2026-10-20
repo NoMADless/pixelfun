@@ -78,6 +78,7 @@ export const PROOF: ProofConfig = {
     "Economics",
   ],
   imdLaunchNumber: 2148,
+  imdJobUrl: "https://explorer.imd.fun/jobs/7080a75d-d9a3-48da-a85c-9cb4e20a6f67",
   repoUrl: "https://github.com/identity-md-launches/launch-2148-dsa",
   deployedUnchanged: true,
   demoTxUrls: [

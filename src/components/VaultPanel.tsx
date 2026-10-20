@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { formatUnits, parseUnits } from "viem";
-import { CHAIN_ID, EXPLORER_URL } from "@/config/chains";
+import { CHAIN_ID, EXPLORER_URL, IMD_ADDRESS, explorerTokenUrl } from "@/config/chains";
 import type { VaultHandle } from "@/lib/hooks/useVault";
 import { formatToken, getErrorMessage, shortenAddress } from "@/lib/format";
 import { TOKEN_SYMBOL } from "@/shared/palette";
@@ -185,6 +186,26 @@ export function VaultPanel({ open, onClose, mockMode, vault, mockVault, onNotify
                 </div>
               </div>
             </div>
+
+            <p className="text-[9px] leading-relaxed text-muted">
+              Need {TOKEN_SYMBOL}?{" "}
+              {IMD_ADDRESS && (
+                <>
+                  <a
+                    href={explorerTokenUrl(IMD_ADDRESS)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-accent"
+                  >
+                    Token page ↗
+                  </a>{" "}
+                  ·{" "}
+                </>
+              )}
+              <Link href="/about" className="underline underline-offset-2 hover:text-accent">
+                How to get it
+              </Link>
+            </p>
 
             {!connected && (
               <div className="border-2 border-line bg-bg p-3 text-xs text-muted">

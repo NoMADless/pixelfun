@@ -11,6 +11,7 @@ import {
 import { useStats } from "@/lib/hooks/useLeaderboard";
 import { formatToken } from "@/lib/format";
 import { useRuntimeConfig } from "@/lib/runtime";
+import { PROOF } from "@/config/proof";
 import { TOKEN_SYMBOL, PRICE_DISPLAY } from "@/shared/palette";
 import { formatDurationSeconds } from "@/shared/time";
 
@@ -55,6 +56,7 @@ export function AboutView() {
   const boardSize = stats?.boardSize ?? 66;
   const minPixels = stats?.minPixels ?? 20;
   const nftSupply = 5 * boardSize;
+  const tokenHref = IMD_ADDRESS ? explorerTokenUrl(IMD_ADDRESS) : null;
 
   return (
     <div className="mx-auto w-full max-w-4xl flex-1 px-3 py-4 sm:py-6">
@@ -180,6 +182,52 @@ export function AboutView() {
           <div className="mt-2 flex flex-col gap-1">
             <AddressLink label="Vault" address={VAULT_ADDRESS} />
             <AddressLink label="IMD" address={IMD_ADDRESS} kind="token" />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-5">
+        <h2 className="pixel-font text-[11px]">GET IMD</h2>
+        <div className="mt-2 pixel-panel p-3">
+          <p className="text-[11px] leading-relaxed text-muted">
+            Painting needs {TOKEN_SYMBOL} on Robinhood Chain. The token and the launch that
+            deployed this vault are both public:
+          </p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            {tokenHref && (
+              <a
+                href={tokenHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pixel-btn inline-flex h-9 items-center justify-center px-3 text-[10px]"
+              >
+                {TOKEN_SYMBOL} token on the explorer ↗
+              </a>
+            )}
+            {PROOF.imdJobUrl && (
+              <a
+                href={PROOF.imdJobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pixel-btn pixel-btn-primary inline-flex h-9 items-center justify-center px-3 text-[10px]"
+              >
+                IMD launch #{PROOF.imdLaunchNumber} ↗
+              </a>
+            )}
+          </div>
+          <div className="mt-2 space-y-1 text-[9px] leading-relaxed text-muted">
+            <p>
+              Robinhood Chain {TOKEN_SYMBOL}:{" "}
+              <span className="font-mono">{IMD_ADDRESS ?? "configured after deploy"}</span>
+            </p>
+            <p>
+              This is not the $IMD listed on imd.fun: that is an Ethereum token at a different
+              address, and it cannot be deposited into this vault. Use the token page above.
+            </p>
+            <p>
+              PixelFun never sells {TOKEN_SYMBOL} and takes no fee. Once you hold some, deposit it
+              in the vault, then paint — unspent balance is always withdrawable.
+            </p>
           </div>
         </div>
       </section>
