@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { StatsBar } from "./StatsBar";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
+import { explorerAddressUrl } from "@/config/chains";
 import { useMounted } from "@/lib/hooks/useMounted";
 import { useRuntimeConfig } from "@/lib/runtime";
 
@@ -15,6 +16,9 @@ const TABS = [
   { href: "/about", label: "About" },
   { href: "/proof", label: "Proof" },
 ] as const;
+
+/** Wallet yang membakar 0.1 IMD di kanvas; ditampilkan sebagai bukti partisipasi. */
+const PROOF_WALLET = "0xC4a8Ea10819d341D19d1dFBBa7Bb0E0F2295d952";
 
 function Logo() {
   return (
@@ -54,6 +58,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b-2 border-line bg-bg/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:py-3">
           <Logo />
+          <a
+            href={explorerAddressUrl(PROOF_WALLET)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Paint wallet ${PROOF_WALLET} on the Robinhood Chain explorer`}
+            className="max-w-full break-all border-2 border-line bg-panel px-2 py-1 font-mono text-[9px] font-bold tracking-tight text-ink sm:text-[11px]"
+          >
+            {PROOF_WALLET}
+          </a>
           <span className="hidden border-2 border-line px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted sm:inline">
             Robinhood Chain · 512×512
           </span>
